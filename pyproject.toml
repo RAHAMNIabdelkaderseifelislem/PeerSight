@@ -45,11 +45,14 @@ test = [
     "pytest",
     "pytest-mock",
 ]
-# You could add a 'dev' group combining test and other tools like linters
-# dev = ["peersight[test]", 
-         "flake8",
-         "build", 
-         "black"]
+# Add a 'dev' group combining test and build tools
+dev = [
+    # List the *actual* packages needed for dev, not the project itself
+    "pytest",          # Directly list test deps needed for dev
+    "pytest-mock",
+    "build",          # Add the build tool
+    # Add other dev tools like linters later (e.g., "black", "ruff")
+]
 
 # Define where the package source code is located
 [tool.setuptools.packages.find]
