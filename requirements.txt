@@ -6,3 +6,4 @@ requests
 
 # Testing
 pytest
+pytest-mock
