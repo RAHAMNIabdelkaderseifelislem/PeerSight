@@ -1,95 +1,73 @@
 """
-PeerSight: AI Academic Paper Reviewer
+PeerSight: AI Academic Paper Reviewer Command-Line Interface.
+Handles argument parsing and invokes the core review generation logic.
 """
 import argparse
 import sys
 import logging
 
-from . import config
-from . import llm_client
-from . import utils
-from . import prompts
+# Import the core review generation function
+from . import core
+# Import config only if needed directly in main (e.g., display version info),
+# otherwise core.py handles necessary config through its imports.
+from . import config # Keep for displaying config info
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure root logger (best practice)
+# This configuration will apply to loggers in core.py, utils.py etc. unless they override it
+logging.basicConfig(
+    level=logging.INFO, # Set default level (can be overridden by env var later)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+# Example: Get logger for this specific module
+logger = logging.getLogger(__name__) # Use __name__ for module-specific logger
 
 def setup_arg_parser():
     """Sets up the command-line argument parser."""
     parser = argparse.ArgumentParser(description="PeerSight: AI Academic Paper Reviewer")
     parser.add_argument("paper_path", help="Path to the academic paper plain text file.")
-    # Add the optional output file argument
     parser.add_argument(
         "-o", "--output",
         help="Path to save the generated review text file. If not provided, prints to console."
     )
+    # Example: Add a verbosity flag later
+    # parser.add_argument("-v", "--verbose", action="store_true", help="Increase output verbosity (DEBUG level)")
     return parser
 
 def run():
-    logging.info("--- PeerSight Process Starting ---")
+    """Main entry point for the CLI application."""
     parser = setup_arg_parser()
-    args = parser.parse_args() # Parse arguments, including the new optional one
+    args = parser.parse_args()
 
-    logging.info(f"Review request for paper: {args.paper_path}")
-    # Log the output path if provided
+    # --- Optional: Setup logging level based on args ---
+    # if args.verbose:
+    #     logging.getLogger().setLevel(logging.DEBUG) # Set root logger level
+    #     logger.debug("Verbose mode enabled.")
+
+    logger.info("--- PeerSight CLI Initializing ---")
+    logger.info(f"Configuration: Using Ollama model '{config.OLLAMA_MODEL}' at '{config.OLLAMA_API_URL}'")
+    logger.info(f"Processing request for paper: {args.paper_path}")
     if args.output:
-        logging.info(f"Review will be saved to: {args.output}")
+        logger.info(f"Output target: File '{args.output}'")
     else:
-        logging.info("Review will be printed to console.")
+        logger.info("Output target: Console")
+    print("-" * 30) # Keep visual separator
 
-    logging.info(f"Using Ollama model: {config.OLLAMA_MODEL}")
-    logging.info(f"Ollama API URL: {config.OLLAMA_API_URL}")
-    print("-" * 30) # Use print for visual separation
+    # --- Invoke Core Logic ---
+    # Pass the arguments to the core function
+    success = core.generate_review(args.paper_path, args.output)
 
-    # --- Read Paper Content ---
-    paper_content = utils.read_text_file(args.paper_path)
-    if paper_content is None:
-        logging.error(f"Fatal: Could not read the paper file at '{args.paper_path}'. Exiting.")
-        sys.exit(1)
-    logging.info(f"Successfully loaded paper content ({len(paper_content)} characters).")
-    print("-" * 30)
-
-    # --- Generate Review Prompt ---
-    review_prompt = prompts.format_review_prompt(paper_content)
-    logging.info("Generated review prompt for LLM.")
-    print("-" * 30)
-
-    # --- Query LLM for Review ---
-    logging.info("Sending request to LLM for paper review...")
-    raw_review_output = llm_client.query_ollama(review_prompt)
-    print("-" * 30)
-
-    # --- Process and Output Review ---
-    if raw_review_output:
-        logging.info("Received raw response from LLM.")
-        cleaned_review = utils.clean_llm_output(raw_review_output)
-        logging.info("Cleaned LLM response.")
-
-        # Decide whether to save to file or print to console
-        if args.output:
-            logging.info(f"Attempting to save review to file: {args.output}")
-            success = utils.write_text_file(args.output, cleaned_review)
-            if success:
-                print(f"Review successfully saved to: {args.output}") # User confirmation
-            else:
-                logging.error(f"Failed to save review to file: {args.output}")
-                print(f"Error: Failed to save review to {args.output}. Check logs.")
-                # Optionally print to console as fallback? For now, just report error.
-                # print("\n--- Generated Peer Review (Console Fallback) ---")
-                # print(cleaned_review)
-                # print("--- End of Review ---")
-        else:
-            # Print to console if no output file specified
-            print("--- Generated Peer Review ---")
-            print(cleaned_review)
-            print("--- End of Review ---")
-
+    print("-" * 30) # Keep visual separator
+    if success:
+        logger.info("--- PeerSight CLI Finished Successfully ---")
+        sys.exit(0) # Exit with success code
     else:
-        logging.error("Failed to get review response from Ollama. Check previous logs.")
-        print("Error: Failed to generate review. Please check Ollama connection and logs.")
-        sys.exit(1)
-
-    print("-" * 30)
-    logging.info("--- PeerSight Process Finished ---")
-
+        logger.error("--- PeerSight CLI Finished with Errors ---")
+        # Specific error messages should have been printed by core.py or utils.py
+        print("Review generation failed. Please check the log messages above for details.", file=sys.stderr)
+        sys.exit(1) # Exit with error code
 
 if __name__ == "__main__":
+    # This structure allows calling run() if the script is executed directly
+    # while also allowing importing main.py without automatically running.
     run()
