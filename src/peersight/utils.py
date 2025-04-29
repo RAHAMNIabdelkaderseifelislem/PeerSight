@@ -59,68 +59,51 @@ def clean_llm_output(raw_output: str) -> str:
     """
     logger.debug(f"Raw LLM output received for cleaning:\n---\n{raw_output}\n---")
 
-    # 1. Find the start of the structured review
     start_marker = prompts.REVIEW_SECTION_SUMMARY
     start_index = raw_output.find(start_marker)
-
     if start_index == -1:
         logger.warning(f"Could not find the start marker '{start_marker}' in LLM output. Returning raw output.")
         return raw_output.strip()
 
-    # Extract text from the start marker onwards
     review_potential = raw_output[start_index:]
     logger.debug(f"Text potentially containing review (from start marker):\n---\n{review_potential}\n---")
 
-    # 2. Find the start of the Recommendation section within the potential review text
     recommendation_marker = prompts.REVIEW_SECTION_RECOMMENDATION
-    # Find relative to the start of review_potential
     recommendation_start_index_rel = review_potential.find(recommendation_marker)
-
     if recommendation_start_index_rel == -1:
         logger.warning(f"Could not find recommendation marker '{recommendation_marker}' after start marker. Using regex fallback on original text.")
-        # Fallback to regex method on the *original* raw_output if structure is broken
         return _clean_with_regex_fallback(raw_output)
 
-    # 3. Define markers that indicate the END of the review content
-    # These should appear *after* the recommendation header text
-    next_section_marker = r'^\s*## ' # Start of any *new* section after Recommendation
-    # Re-use the fallback markers that indicate meta-commentary etc.
-    fallback_end_markers = [
+    # Define markers that indicate the END of the review content
+    next_section_marker = r'^\s*## '
+    # Add more general conversational markers observed
+    meta_commentary_markers = [
          r'<\/?think>', r'alright, let me', r'okay, so I need', r'okay, so I\'ve got',
+         r'^\s*Okay, so', # Added this general pattern (start of line, optional space)
          r'here\'s my thought process', r'\bstep-by-step\b', r'thinking process:',
          r'internal thoughts:', r'my reasoning:', r'please note that',
          r'--- END REVIEW ---', r'^\s*Note:',
-         # Avoid matching the ## Summary marker here as it's handled by start_index
     ]
-    # Combine patterns. Search starts AFTER the recommendation header text ends.
     search_start_pos = recommendation_start_index_rel + len(recommendation_marker)
-    end_pattern = re.compile(r'(' + next_section_marker + '|' + '|'.join(fallback_end_markers) + r')', re.IGNORECASE | re.MULTILINE)
+    # Combine patterns. Search starts AFTER the recommendation header text ends.
+    end_pattern = re.compile(r'(' + next_section_marker + '|' + '|'.join(meta_commentary_markers) + r')', re.IGNORECASE | re.MULTILINE)
 
-    # 4. Search for the first end marker *after* the recommendation header in review_potential
     match = end_pattern.search(review_potential, pos=search_start_pos)
-
-    end_index = -1 # Default to end of string if no marker found
+    end_index = len(review_potential) # Default to end of string
     if match:
-        # Found a marker indicating the end of the desired content
-        end_index = match.start() # Slice up to the start of the marker
+        end_index = match.start()
         logger.info(f"Found end boundary '{match.group(0).strip()}' after recommendation at index {end_index} relative to start marker. Truncating.")
     else:
-        # No end marker found, assume review goes to the end of the string
-        end_index = len(review_potential)
         logger.info("No end boundary found after recommendation marker. Assuming review ends here.")
 
-    # 5. Extract the cleaned review by slicing review_potential
     cleaned_output = review_potential[:end_index].strip()
 
-    # Final sanity check (ensure ## Summary and ## Recommendation are still present)
     if not cleaned_output.startswith(start_marker):
          logger.warning(f"Cleaned output invalid: does not start with '{start_marker}'. Output:\n{cleaned_output}")
-         # Consider returning original or fallback result? For now, return broken output.
     elif recommendation_marker not in cleaned_output:
          logger.warning(f"Cleaned output invalid: recommendation marker '{recommendation_marker}' missing. Output:\n{cleaned_output}")
-         # This shouldn't happen if recommendation_start_index_rel was found, unless end_index was wrong.
 
-    logger.debug(f"Corrected structure-based cleaned LLM output:\n---\n{cleaned_output}\n---")
+    logger.debug(f"Final cleaned LLM output:\n---\n{cleaned_output}\n---") # Changed log message slightly
     return cleaned_output
 
 # Helper function for fallback cleaning (remains unchanged)
