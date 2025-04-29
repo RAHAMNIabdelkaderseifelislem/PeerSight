@@ -1,1 +1,5 @@
 # Requirements for PeerSight
+
+# Core libraries
+python-dotenv
+requests
