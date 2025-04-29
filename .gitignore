@@ -11,3 +11,6 @@ dist/
 
 # Output directories
 reviews_output/
+
+# Pytest cache
+.pytest_cache/

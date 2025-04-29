@@ -3,3 +3,6 @@
 # Core libraries
 python-dotenv
 requests
+
+# Testing
+pytest
