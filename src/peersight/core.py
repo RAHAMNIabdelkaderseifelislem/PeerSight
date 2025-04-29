@@ -1,86 +1,86 @@
 import logging
 import sys
 
-# Import necessary components from other modules within the package
 from . import utils
 from . import prompts
 from . import llm_client
-# No need to import config directly if llm_client and utils use it internally
+# Import config to log default if override not used (optional)
+# from . import config
 
-# Configure logging for this module (or rely on root configuration)
-# logger = logging.getLogger(__name__) # Alternative: specific logger per module
+logger = logging.getLogger(__name__)
 
-def generate_review(paper_path: str, output_path: str = None) -> bool:
+# Add parameters to accept overrides
+def generate_review(paper_path: str,
+                    output_path: str = None,
+                    model_override: str = None,
+                    api_url_override: str = None) -> bool:
     """
     Orchestrates the academic paper review generation process.
-
-    Reads the paper, generates a prompt, queries the LLM, cleans the output,
-    and saves or prints the result.
-
-    Args:
-        paper_path: Path to the input paper text file.
-        output_path: Optional path to save the review output file.
-                     If None, prints to console.
-
-    Returns:
-        True if the review was generated and output successfully, False otherwise.
+    Accepts optional overrides for model and API URL.
     """
-    logging.info(f"Starting review generation for: {paper_path}")
+    logger.info(f"Starting review generation for: {paper_path}")
+    # Log which model/URL will be attempted (override or default via llm_client)
+    # llm_client handles the logic of using override vs config default
+    # We could log here too for clarity in core logs
+    if model_override: logger.debug(f"Using CLI model override: {model_override}")
+    if api_url_override: logger.debug(f"Using CLI API URL override: {api_url_override}")
 
     # 1. Read Paper Content
     paper_content = utils.read_text_file(paper_path)
     if paper_content is None:
-        logging.error(f"Failed to read paper content from '{paper_path}'. Aborting review.")
-        return False # Indicate failure
-    logging.info(f"Successfully loaded paper content ({len(paper_content)} characters).")
+        logger.error(f"Failed to read paper content from '{paper_path}'. Aborting review.")
+        return False
+    logger.info(f"Successfully loaded paper content ({len(paper_content)} characters).")
 
     # 2. Generate Review Prompt
     review_prompt = prompts.format_review_prompt(paper_content)
-    logging.info("Generated review prompt for LLM.")
+    logger.info("Generated review prompt for LLM.")
 
     # 3. Query LLM for Review
-    logging.info("Sending request to LLM for paper review...")
-    raw_review_output = llm_client.query_ollama(review_prompt)
+    logger.info("Sending request to LLM for paper review...")
+    # Pass overrides to the client function
+    raw_review_output = llm_client.query_ollama(
+        prompt=review_prompt,
+        model=model_override,       # Pass override value
+        api_url=api_url_override    # Pass override value
+    )
 
     if not raw_review_output:
-        logging.error("Failed to get valid response from LLM. Aborting review.")
-        return False # Indicate failure
+        logger.error("Failed to get valid response from LLM. Aborting review.")
+        return False
 
-    logging.info("Received raw response from LLM.")
+    logger.info("Received raw response from LLM.")
 
     # 4. Clean LLM Output
+    # ... (cleaning logic remains the same) ...
     cleaned_review = utils.clean_llm_output(raw_review_output)
     if not cleaned_review or not cleaned_review.startswith(prompts.REVIEW_SECTION_SUMMARY):
-         logging.warning(f"Cleaned review seems invalid or empty after processing. Check LLM output and cleaning logic.")
-         # Decide if this is a critical failure or if we should output the potentially broken review.
-         # For now, let's treat it as a failure for generating a *valid* review.
+         logger.warning(f"Cleaned review seems invalid or empty after processing. Check LLM output and cleaning logic.")
          print("Error: Failed to produce a valid structured review after cleaning.", file=sys.stderr)
-         return False # Indicate failure
-
-    logging.info("Cleaned LLM response successfully.")
+         return False
+    logger.info("Cleaned LLM response successfully.")
 
     # 5. Output Review (Save or Print)
+    # ... (output logic remains the same) ...
     output_successful = False
     if output_path:
-        logging.info(f"Attempting to save review to file: {output_path}")
+        logger.info(f"Attempting to save review to file: {output_path}")
         success = utils.write_text_file(output_path, cleaned_review)
         if success:
-            print(f"Review successfully saved to: {output_path}") # User confirmation
+            print(f"Review successfully saved to: {output_path}")
             output_successful = True
         else:
-            logging.error(f"Failed to save review to file: {output_path}")
+            logger.error(f"Failed to save review to file: {output_path}")
             print(f"Error: Failed to save review to {output_path}. Check logs.", file=sys.stderr)
-            # Still return False as the intended output action failed
     else:
-        # Print to console if no output file specified
-        print("\n--- Generated Peer Review ---") # Add newline for spacing
+        print("\n--- Generated Peer Review ---")
         print(cleaned_review)
-        print("--- End of Review ---\n") # Add newline for spacing
-        output_successful = True # Printing to console is considered success here
+        print("--- End of Review ---\n")
+        output_successful = True
 
     if output_successful:
-        logging.info(f"Review generation and output for '{paper_path}' completed successfully.")
+        logger.info(f"Review generation and output for '{paper_path}' completed successfully.")
     else:
-         logging.error(f"Review generation completed but output failed for '{paper_path}'.")
+         logger.error(f"Review generation completed but output failed for '{paper_path}'.")
 
     return output_successful
