@@ -1,0 +1,62 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0"] # Specify minimum setuptools version
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "peersight"
+version = "0.1.0" # Sync this with src/peersight/__init__.py (manual for now)
+authors = [
+    { name="AbdElKader Seif El Islem RAHMANI", email="a.e.k426rahmani@gmail.com" },
+]
+description = "PeerSight: An AI-powered command-line tool for simulating academic paper reviews using local LLMs via Ollama."
+readme = "README.md" # Path to your README file
+requires-python = ">=3.9" # Specify minimum Python version
+license = { text = "MIT" } # Choose an appropriate license (e.g., MIT, Apache-2.0) or remove if private
+keywords = ["ai", "llm", "ollama", "review", "academic", "nlp", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha", # Development stage
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License", # Match license above
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Environment :: Console",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Text Processing :: Linguistic",
+    "Operating System :: OS Independent", # Assuming it is
+]
+
+# List project dependencies (copied from requirements.txt)
+# Keep requirements.txt for editable installs / dev environment sync for now
+dependencies = [
+    "python-dotenv",
+    "requests",
+    # Testing dependencies are often handled separately (see [project.optional-dependencies])
+]
+
+[project.optional-dependencies]
+# Define dependencies needed only for testing or development
+test = [
+    "pytest",
+    "pytest-mock",
+]
+# You could add a 'dev' group combining test and other tools like linters
+# dev = ["peersight[test]", "flake8", "black"]
+
+# Define where the package source code is located
+[tool.setuptools.packages.find]
+where = ["src"]  # look in the src directory for packages
+
+# Define the command-line script entry point
+[project.scripts]
+peersight = "peersight.main:run"
+
+# Optional: Define URLs for repository, documentation, etc.
+# [project.urls]
+# "Homepage" = "https://github.com/RAHAMNIabdelkaderseifelislem/PeerSight"
+# "Bug Tracker" = "https://github.com/RAHAMNIabdelkaderseifelislem/PeerSight/issues"
