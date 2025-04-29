@@ -46,7 +46,10 @@ test = [
     "pytest-mock",
 ]
 # You could add a 'dev' group combining test and other tools like linters
-# dev = ["peersight[test]", "flake8", "black"]
+# dev = ["peersight[test]", 
+         "flake8",
+         "build", 
+         "black"]
 
 # Define where the package source code is located
 [tool.setuptools.packages.find]
