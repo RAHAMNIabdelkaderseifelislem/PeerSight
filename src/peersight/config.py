@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 
 dotenv_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
@@ -11,10 +12,12 @@ OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", 0.7))
 # Add top_k and top_p defaults (Ollama defaults are often high/disabled)
 # Use -1 or similar convention to indicate 'not set' / use Ollama's internal default
 # Note: Ollama API expects integers for top_k, floats for top_p
-OLLAMA_TOP_K = int(os.getenv("OLLAMA_TOP_K", -1)) # -1 indicates not set by us
-OLLAMA_TOP_P = float(os.getenv("OLLAMA_TOP_P", -1.0)) # -1.0 indicates not set by us
+OLLAMA_TOP_K = int(os.getenv("OLLAMA_TOP_K", -1))  # -1 indicates not set by us
+OLLAMA_TOP_P = float(os.getenv("OLLAMA_TOP_P", -1.0))  # -1.0 indicates not set by us
 
 
 # --- Application Settings ---
 DEFAULT_ENCODING = "utf-8"
-MAX_PAPER_LENGTH_WARN_THRESHOLD = int(os.getenv("MAX_PAPER_LENGTH_WARN_THRESHOLD", 15000))
+MAX_PAPER_LENGTH_WARN_THRESHOLD = int(
+    os.getenv("MAX_PAPER_LENGTH_WARN_THRESHOLD", 15000)
+)

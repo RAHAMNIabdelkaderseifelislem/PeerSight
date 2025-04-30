@@ -14,8 +14,8 @@ def generate_review(
     model_override: Optional[str] = None,
     api_url_override: Optional[str] = None,
     temperature_override: Optional[float] = None,
-    top_k_override: Optional[int] = None, # Add top_k
-    top_p_override: Optional[float] = None, # Add top_p
+    top_k_override: Optional[int] = None,  # Add top_k
+    top_p_override: Optional[float] = None,  # Add top_p
 ) -> Tuple[bool, Optional[Union[Dict, str]]]:
     """
     Orchestrates the academic paper review generation process.
@@ -30,9 +30,9 @@ def generate_review(
     # Log temp override if present
     if temperature_override is not None:
         logger.debug(f"Using CLI temperature override: {temperature_override}")
-    if top_k_override is not None: 
+    if top_k_override is not None:
         logger.debug(f"Using CLI top_k override: {top_k_override}")
-    if top_p_override is not None: 
+    if top_p_override is not None:
         logger.debug(f"Using CLI top_p override: {top_p_override}")
 
     # 1. Read Paper Content
@@ -65,8 +65,8 @@ def generate_review(
         model=model_override,
         api_url=api_url_override,
         temperature=temperature_override,
-        top_k=top_k_override, # Pass override
-        top_p=top_p_override, # Pass override
+        top_k=top_k_override,  # Pass override
+        top_p=top_p_override,  # Pass override
     )
 
     # 4. Clean LLM Output

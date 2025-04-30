@@ -76,12 +76,16 @@ def setup_arg_parser():
 
     # Add top_k and top_p arguments
     parser.add_argument(
-        "--top-k", type=int, default=None,
-        help=f"Set LLM top-k sampling (e.g., 40; default: Ollama internal)"
+        "--top-k",
+        type=int,
+        default=None,
+        help="Set LLM top-k sampling (e.g., 40; default: Ollama internal)",
     )
     parser.add_argument(
-        "--top-p", type=float, default=None,
-        help=f"Set LLM top-p nucleus sampling (e.g., 0.9; default: Ollama internal)"
+        "--top-p",
+        type=float,
+        default=None,
+        help="Set LLM top-p nucleus sampling (e.g., 0.9; default: Ollama internal)",
     )
     # --- Control/Meta Arguments ---
     parser.add_argument(
@@ -154,16 +158,8 @@ def run():
             else config.OLLAMA_TEMPERATURE
         )
         # Determine effective top_k/top_p (None if not set via CLI)
-        effective_top_k = (
-            args.top_k 
-            if args.top_k is not None 
-            else config.OLLAMA_TOP_K
-        )
-        effective_top_p = (
-            args.top_p
-            if args.top_p is not None 
-            else config.OLLAMA_TOP_P
-        )
+        effective_top_k = args.top_k if args.top_k is not None else config.OLLAMA_TOP_K
+        effective_top_p = args.top_p if args.top_p is not None else config.OLLAMA_TOP_P
 
         logger.info(
             f"Effective Ollama Model: '{effective_model}' "
@@ -178,12 +174,16 @@ def run():
             f"{'(CLI override)' if args.temperature is not None else '(from config/env)'}"
         )
         # Log effective top_k/top_p, indicating if default is used
-        logger.info(f"Effective LLM Top-K: "
-                    f"{effective_top_k if effective_top_k is not None else 'Ollama Default'} "
-                    f"{'(CLI override)' if effective_top_k is not None else ''}")
-        logger.info(f"Effective LLM Top-P: "
-                    f"{effective_top_p if effective_top_p is not None else 'Ollama Default'} "
-                    f"{'(CLI override)' if effective_top_p is not None else ''}")
+        logger.info(
+            f"Effective LLM Top-K: "
+            f"{effective_top_k if effective_top_k is not None else 'Ollama Default'} "
+            f"{'(CLI override)' if effective_top_k is not None else ''}"
+        )
+        logger.info(
+            f"Effective LLM Top-P: "
+            f"{effective_top_p if effective_top_p is not None else 'Ollama Default'} "
+            f"{'(CLI override)' if effective_top_p is not None else ''}"
+        )
 
         logger.info(f"Processing request for paper: {args.paper_path}")
         output_format = "JSON" if args.json else "Text"
