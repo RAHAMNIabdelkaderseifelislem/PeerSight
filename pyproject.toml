@@ -52,6 +52,8 @@ dev = [
     "pytest-mock",
     "build",          # Add the build tool
     # Add other dev tools like linters later (e.g., "black", "ruff")
+    "black",
+    "ruff",
 ]
 
 # Define where the package source code is located
@@ -61,6 +63,32 @@ where = ["src"]  # look in the src directory for packages
 # Define the command-line script entry point
 [project.scripts]
 peersight = "peersight.main:run"
+
+# Add configuration sections for the tools
+[tool.black]
+line-length = 88 # Or choose your preferred length (e.g., 79)
+target-version = ['py39', 'py310', 'py311', 'py312'] # Target Python versions
+
+[tool.ruff]
+line-length = 88 # Match black's line length
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort (import sorting)
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    # Add more rule sets as desired, e.g., "RUF" for ruff-specific rules
+]
+ignore = [
+    "E501", # Line too long (handled by black)
+]
+# Specify Python version Ruff should target
+target-version = "py39" # Set to your minimum supported version
+
+# Optional: Configure isort via ruff
+[tool.ruff.isort]
+known_first_party = ["peersight"] # Tell isort 'peersight' is our code
 
 # Optional: Define URLs for repository, documentation, etc.
 # [project.urls]

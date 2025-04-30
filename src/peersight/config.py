@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 
 # ... load_dotenv ...
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
 load_dotenv(dotenv_path=dotenv_path)
 
 
@@ -15,4 +15,6 @@ OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", 0.7))
 
 # --- Application Settings ---
 DEFAULT_ENCODING = "utf-8"
-MAX_PAPER_LENGTH_WARN_THRESHOLD = int(os.getenv("MAX_PAPER_LENGTH_WARN_THRESHOLD", 15000))
+MAX_PAPER_LENGTH_WARN_THRESHOLD = int(
+    os.getenv("MAX_PAPER_LENGTH_WARN_THRESHOLD", 15000)
+)

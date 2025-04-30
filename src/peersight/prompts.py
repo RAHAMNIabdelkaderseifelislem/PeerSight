@@ -1,4 +1,4 @@
-import re # Keep re if needed elsewhere, maybe not needed here anymore
+import re  # Keep re if needed elsewhere, maybe not needed here anymore
 
 # --- Review Structure Constants ---
 REVIEW_SECTION_SUMMARY = "## Summary"
@@ -45,6 +45,7 @@ PEER_REVIEW_PROMPT_TEMPLATE = """
     Review Output:
     """
 
+
 def format_review_prompt(paper_content: str) -> str:
     """
     Formats the peer review prompt template with the paper content
@@ -56,6 +57,8 @@ def format_review_prompt(paper_content: str) -> str:
         strengths_section_header=REVIEW_SECTION_STRENGTHS,
         weaknesses_section_header=REVIEW_SECTION_WEAKNESSES,
         recommendation_section_header=REVIEW_SECTION_RECOMMENDATION,
-        recommendation_options_str=", ".join(f'"{opt}"' for opt in REVIEW_RECOMMENDATION_OPTIONS),
-        paper_content=paper_content
+        recommendation_options_str=", ".join(
+            f'"{opt}"' for opt in REVIEW_RECOMMENDATION_OPTIONS
+        ),
+        paper_content=paper_content,
     )

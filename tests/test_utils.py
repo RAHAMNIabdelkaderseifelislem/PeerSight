@@ -10,7 +10,8 @@ sys.path.insert(0, str(src_path))
 
 from peersight import utils
 from peersight import config
-from peersight import prompts # Import prompts for markers
+from peersight import prompts  # Import prompts for markers
+
 
 # --- Test Fixtures ---
 @pytest.fixture(scope="function")
@@ -20,35 +21,44 @@ def temp_test_dir(tmp_path):
     test_dir.mkdir()
     return test_dir
 
+
 # --- Tests for read_text_file ---
 # ... (keep existing tests for read_text_file) ...
 def test_read_text_file_success(temp_test_dir):
     file_path = temp_test_dir / "test_read.txt"
     expected_content = "This is a test file.\nWith multiple lines."
-    with open(file_path, "w", encoding=config.DEFAULT_ENCODING) as f: f.write(expected_content)
+    with open(file_path, "w", encoding=config.DEFAULT_ENCODING) as f:
+        f.write(expected_content)
     content = utils.read_text_file(str(file_path))
     assert content is not None and content == expected_content
+
 
 def test_read_text_file_not_found(temp_test_dir):
     file_path = temp_test_dir / "non_existent.txt"
     content = utils.read_text_file(str(file_path))
     assert content is None
 
+
 def test_read_text_file_different_encoding_success(temp_test_dir):
     file_path = temp_test_dir / "test_encoding.txt"
     expected_content = "Test content with accents: éàçü"
     test_encoding = "latin-1"
-    with open(file_path, "w", encoding=test_encoding) as f: f.write(expected_content)
+    with open(file_path, "w", encoding=test_encoding) as f:
+        f.write(expected_content)
     content = utils.read_text_file(str(file_path), encoding=test_encoding)
     assert content is not None and content == expected_content
+
 
 def test_read_text_file_wrong_encoding_fails(temp_test_dir):
     file_path = temp_test_dir / "test_wrong_encoding.txt"
     content_to_write = "你好世界"
-    write_encoding = "utf-8"; read_encoding = "ascii"
-    with open(file_path, "w", encoding=write_encoding) as f: f.write(content_to_write)
+    write_encoding = "utf-8"
+    read_encoding = "ascii"
+    with open(file_path, "w", encoding=write_encoding) as f:
+        f.write(content_to_write)
     content = utils.read_text_file(str(file_path), encoding=read_encoding)
     assert content is None
+
 
 # --- Tests for write_text_file ---
 # ... (keep existing tests for write_text_file) ...
@@ -58,8 +68,10 @@ def test_write_text_file_success(temp_test_dir):
     success = utils.write_text_file(str(file_path), content_to_write)
     assert success is True
     assert file_path.exists()
-    with open(file_path, "r", encoding=config.DEFAULT_ENCODING) as f: read_content = f.read()
+    with open(file_path, "r", encoding=config.DEFAULT_ENCODING) as f:
+        read_content = f.read()
     assert read_content == content_to_write
+
 
 def test_write_text_file_creates_directory(temp_test_dir):
     nested_dir = temp_test_dir / "nested" / "dir"
@@ -69,7 +81,8 @@ def test_write_text_file_creates_directory(temp_test_dir):
     success = utils.write_text_file(str(file_path), content_to_write)
     assert success is True
     assert nested_dir.exists() and file_path.exists()
-    with open(file_path, "r", encoding=config.DEFAULT_ENCODING) as f: read_content = f.read()
+    with open(file_path, "r", encoding=config.DEFAULT_ENCODING) as f:
+        read_content = f.read()
     assert read_content == content_to_write
 
 
@@ -87,13 +100,15 @@ Strength 2
 
 Weakness 1
 {prompts.REVIEW_SECTION_RECOMMENDATION}
-Accept""" # Note: No trailing newline in this definition
+Accept"""  # Note: No trailing newline in this definition
+
 
 def test_clean_llm_output_already_clean():
     """Test cleaning output that is already in the correct format."""
-    raw_output = EXPECTED_CLEAN_REVIEW + "\n" # Add newline like LLM might
+    raw_output = EXPECTED_CLEAN_REVIEW + "\n"  # Add newline like LLM might
     cleaned = utils.clean_llm_output(raw_output)
     assert cleaned == EXPECTED_CLEAN_REVIEW
+
 
 def test_clean_llm_output_with_preamble():
     """Test cleaning output with text before the first marker."""
@@ -103,6 +118,7 @@ def test_clean_llm_output_with_preamble():
     """
     cleaned = utils.clean_llm_output(raw_output)
     assert cleaned == EXPECTED_CLEAN_REVIEW
+
 
 def test_clean_llm_output_with_postamble_think():
     """Test cleaning output with <think> blocks after recommendation."""
@@ -114,6 +130,7 @@ def test_clean_llm_output_with_postamble_think():
     Let me know if you need more help!"""
     cleaned = utils.clean_llm_output(raw_output)
     assert cleaned == EXPECTED_CLEAN_REVIEW
+
 
 def test_clean_llm_output_with_postamble_prose():
     """Test cleaning output with general prose after recommendation."""
@@ -128,11 +145,13 @@ def test_clean_llm_output_with_postamble_prose():
     # Let's assert the ideal outcome based on the primary structure cleaning.
     assert cleaned == EXPECTED_CLEAN_REVIEW
 
+
 def test_clean_llm_output_recommendation_at_end():
     """Test cleaning when recommendation is the absolute last text."""
-    raw_output = EXPECTED_CLEAN_REVIEW # No trailing newline or text
+    raw_output = EXPECTED_CLEAN_REVIEW  # No trailing newline or text
     cleaned = utils.clean_llm_output(raw_output)
     assert cleaned == EXPECTED_CLEAN_REVIEW
+
 
 def test_clean_llm_output_missing_recommendation_marker():
     """Test cleaning when the recommendation marker is missing (should use fallback)."""
@@ -146,7 +165,7 @@ def test_clean_llm_output_missing_recommendation_marker():
     Bad stuff.
 
     Some Other Section Header
-    Minor Revision""" # Missing the standard Recommendation header
+    Minor Revision"""  # Missing the standard Recommendation header
     # Expect the fallback (regex) cleaner to run. It might not clean perfectly
     # if no regex end markers are hit. It should at least start correctly.
     cleaned = utils.clean_llm_output(raw_output)
@@ -156,21 +175,24 @@ def test_clean_llm_output_missing_recommendation_marker():
     # but we can check it didn't return the original raw string if preamble existed.
     # For this specific input, fallback might return the whole thing. Let's just check start.
 
+
 def test_clean_llm_output_missing_summary_marker():
     """Test cleaning when the initial summary marker is missing."""
     raw_output = f"""Here's the review:
     Strengths: blah
     Weaknesses: blah
-    Recommendation: Accept""" # Missing ## Summary
+    Recommendation: Accept"""  # Missing ## Summary
     cleaned = utils.clean_llm_output(raw_output)
     # Should return the raw output stripped, as the start anchor is missing
     assert cleaned == raw_output.strip()
+
 
 def test_clean_llm_output_empty_input():
     """Test cleaning with empty string input."""
     raw_output = ""
     cleaned = utils.clean_llm_output(raw_output)
     assert cleaned == ""
+
 
 def test_clean_llm_output_junk_input():
     """Test cleaning with input that doesn't match structure."""

@@ -12,12 +12,16 @@ from peersight import prompts
 
 # --- Tests for format_review_prompt ---
 
+
 def test_format_review_prompt_basic():
     """Test basic formatting of the review prompt."""
     test_paper_content = "This is the paper text."
     formatted_prompt = prompts.format_review_prompt(test_paper_content)
 
-    assert f"--- START PAPER ---\n{test_paper_content}\n--- END PAPER ---" in formatted_prompt
+    assert (
+        f"--- START PAPER ---\n{test_paper_content}\n--- END PAPER ---"
+        in formatted_prompt
+    )
     assert prompts.REVIEW_SECTION_SUMMARY in formatted_prompt
     assert prompts.REVIEW_SECTION_STRENGTHS in formatted_prompt
     assert prompts.REVIEW_SECTION_WEAKNESSES in formatted_prompt
@@ -29,15 +33,19 @@ def test_format_review_prompt_basic():
     assert "Your entire output must start directly with" in formatted_prompt
 
     # Correct the expected ending based on test failure output
-    assert formatted_prompt.endswith("\nReview Output:\n") # Removed asterisks
+    assert formatted_prompt.endswith("\nReview Output:\n")  # Removed asterisks
+
 
 def test_format_review_prompt_empty_content():
     """Test prompt formatting with empty paper content."""
     test_paper_content = ""
     formatted_prompt = prompts.format_review_prompt(test_paper_content)
 
-    assert f"--- START PAPER ---\n{test_paper_content}\n--- END PAPER ---" in formatted_prompt
+    assert (
+        f"--- START PAPER ---\n{test_paper_content}\n--- END PAPER ---"
+        in formatted_prompt
+    )
     assert prompts.REVIEW_SECTION_SUMMARY in formatted_prompt
     assert prompts.REVIEW_SECTION_RECOMMENDATION in formatted_prompt
     # Correct the expected ending based on test failure output
-    assert formatted_prompt.endswith("\nReview Output:\n") # Removed asterisks
+    assert formatted_prompt.endswith("\nReview Output:\n")  # Removed asterisks

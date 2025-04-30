@@ -16,7 +16,7 @@ VALID_SUMMARY = "This is the main summary text."
 VALID_STRENGTHS = "- Strength A\n- Strength B is good."
 VALID_WEAKNESSES = "- Weakness 1\n- Weakness 2 needs work."
 VALID_RECOMMENDATION = "Accept"
-VALID_RECOMMENDATION_LOWER = "minor revision" # Test case insensitivity
+VALID_RECOMMENDATION_LOWER = "minor revision"  # Test case insensitivity
 
 VALID_REVIEW_TEXT = f"""{prompts.REVIEW_SECTION_SUMMARY}
 {VALID_SUMMARY}
@@ -34,24 +34,29 @@ VALID_REVIEW_TEXT_LOWER_REC = f"""{prompts.REVIEW_SECTION_SUMMARY}
 {prompts.REVIEW_SECTION_WEAKNESSES}
 {VALID_WEAKNESSES}
 {prompts.REVIEW_SECTION_RECOMMENDATION}
-{VALID_RECOMMENDATION_LOWER}""" # Ends with lowercase rec
+{VALID_RECOMMENDATION_LOWER}"""  # Ends with lowercase rec
 
 # --- Tests for parse_review_text ---
+
 
 def test_parse_review_text_success_basic():
     """Test parsing a well-formed review text."""
     parsed = parser.parse_review_text(VALID_REVIEW_TEXT)
     assert parsed is not None
-    assert parsed['summary'] == VALID_SUMMARY
-    assert parsed['strengths'] == VALID_STRENGTHS
-    assert parsed['weaknesses'] == VALID_WEAKNESSES
-    assert parsed['recommendation'] == VALID_RECOMMENDATION
+    assert parsed["summary"] == VALID_SUMMARY
+    assert parsed["strengths"] == VALID_STRENGTHS
+    assert parsed["weaknesses"] == VALID_WEAKNESSES
+    assert parsed["recommendation"] == VALID_RECOMMENDATION
+
 
 def test_parse_review_text_success_lowercase_recommendation():
     """Test parsing with a lowercase but valid recommendation."""
     parsed = parser.parse_review_text(VALID_REVIEW_TEXT_LOWER_REC)
     assert parsed is not None
-    assert parsed['recommendation'] == VALID_RECOMMENDATION_LOWER # Should store original case
+    assert (
+        parsed["recommendation"] == VALID_RECOMMENDATION_LOWER
+    )  # Should store original case
+
 
 def test_parse_review_text_extra_whitespace():
     """Test parsing handles extra whitespace around sections."""
@@ -78,10 +83,11 @@ def test_parse_review_text_extra_whitespace():
     """
     parsed = parser.parse_review_text(text)
     assert parsed is not None
-    assert parsed['summary'] == VALID_SUMMARY
-    assert parsed['strengths'] == VALID_STRENGTHS
-    assert parsed['weaknesses'] == VALID_WEAKNESSES
-    assert parsed['recommendation'] == VALID_RECOMMENDATION
+    assert parsed["summary"] == VALID_SUMMARY
+    assert parsed["strengths"] == VALID_STRENGTHS
+    assert parsed["weaknesses"] == VALID_WEAKNESSES
+    assert parsed["recommendation"] == VALID_RECOMMENDATION
+
 
 def test_parse_review_text_missing_strengths_section():
     """Test parsing fails if a middle section (Strengths) is missing."""
@@ -95,6 +101,7 @@ def test_parse_review_text_missing_strengths_section():
     # Expect failure because a required key will be missing
     assert parsed is None
 
+
 def test_parse_review_text_missing_recommendation_section():
     """Test parsing fails if the recommendation section is missing."""
     text = f"""{prompts.REVIEW_SECTION_SUMMARY}
@@ -106,6 +113,7 @@ def test_parse_review_text_missing_recommendation_section():
     parsed = parser.parse_review_text(text)
     assert parsed is None
 
+
 def test_parse_review_text_invalid_recommendation():
     """Test parsing handles an invalid recommendation string (stores raw)."""
     invalid_rec = "Maybe Accept?"
@@ -116,22 +124,25 @@ def test_parse_review_text_invalid_recommendation():
     {prompts.REVIEW_SECTION_WEAKNESSES}
     {VALID_WEAKNESSES}
     {prompts.REVIEW_SECTION_RECOMMENDATION}
-    {invalid_rec}""" # Invalid recommendation
+    {invalid_rec}"""  # Invalid recommendation
     parsed = parser.parse_review_text(text)
     # Currently, the parser logs a warning but still returns the dict with raw value
     assert parsed is not None
-    assert parsed['recommendation'] == invalid_rec
+    assert parsed["recommendation"] == invalid_rec
     # If parser were stricter (return None on invalid rec), this assert would change to `is None`
+
 
 def test_parse_review_text_empty_input():
     """Test parsing with empty string input."""
     parsed = parser.parse_review_text("")
     assert parsed is None
 
+
 def test_parse_review_text_only_whitespace():
     """Test parsing with only whitespace input."""
     parsed = parser.parse_review_text("   \n \t ")
     assert parsed is None
+
 
 def test_parse_review_text_missing_summary_header():
     """Test parsing fails if the initial summary header is missing."""
@@ -143,7 +154,8 @@ def test_parse_review_text_missing_summary_header():
     {prompts.REVIEW_SECTION_RECOMMENDATION}
     {VALID_RECOMMENDATION}"""
     parsed = parser.parse_review_text(text)
-    assert parsed is None # Fails because regex split won't work as expected
+    assert parsed is None  # Fails because regex split won't work as expected
+
 
 def test_parse_review_text_unexpected_header():
     """Test parsing handles an unexpected header (it should be ignored)."""
@@ -160,10 +172,10 @@ def test_parse_review_text_unexpected_header():
     parsed = parser.parse_review_text(text)
     # The parser should still extract the known sections correctly
     assert parsed is not None
-    assert parsed['summary'] == VALID_SUMMARY
-    assert parsed['strengths'] == VALID_STRENGTHS
-    assert parsed['weaknesses'] == VALID_WEAKNESSES
-    assert parsed['recommendation'] == VALID_RECOMMENDATION
+    assert parsed["summary"] == VALID_SUMMARY
+    assert parsed["strengths"] == VALID_STRENGTHS
+    assert parsed["weaknesses"] == VALID_WEAKNESSES
+    assert parsed["recommendation"] == VALID_RECOMMENDATION
     # Check that the unexpected header wasn't included
-    assert "some other header" not in parsed # Check keys
-    assert "Some other content." not in parsed.values() # Check values
+    assert "some other header" not in parsed  # Check keys
+    assert "Some other content." not in parsed.values()  # Check values
