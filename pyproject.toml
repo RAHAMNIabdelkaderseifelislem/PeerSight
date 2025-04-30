@@ -78,18 +78,16 @@ target-version = "py39" # Set to your minimum supported version
 # Use the 'lint' subsection for selecting/ignoring rules
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort (import sorting)
-    "C",  # flake8-comprehensions
-    "B",  # flake8-bugbear
+    "E", "W", "F", "I", "C", "B",
 ]
 ignore = [
     "E501", # Line too long (handled by black)
     "C901", # Temporarily ignore Function is too complex
 ]
-# target-version = "py39" # REMOVED FROM HERE
+
+# Ignore E402 (import not at top) specifically for test files
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["E402"] # Pattern matches all .py files in tests dir
 
 # Optional: isort specific configurations go under lint.isort
 [tool.ruff.lint.isort]
