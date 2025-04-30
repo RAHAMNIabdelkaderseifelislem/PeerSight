@@ -29,10 +29,11 @@ def test_format_review_prompt_basic():
     assert options_str in formatted_prompt
     assert "CRITICAL:" in formatted_prompt
     assert "Do NOT include any preamble" in formatted_prompt
-    assert "Your entire output must start directly with" in formatted_prompt
-
-    # Correct the expected ending based on test failure output
-    assert formatted_prompt.endswith("\nReview Output:\n")  # Removed asterisks
+    # Correct the assertion to match the template text (MUST is uppercase)
+    assert (
+        "Your entire output MUST start directly with" in formatted_prompt
+    )  # Changed must -> MUST
+    assert formatted_prompt.endswith("\nReview Output:\n")
 
 
 def test_format_review_prompt_empty_content():
@@ -46,5 +47,4 @@ def test_format_review_prompt_empty_content():
     )
     assert prompts.REVIEW_SECTION_SUMMARY in formatted_prompt
     assert prompts.REVIEW_SECTION_RECOMMENDATION in formatted_prompt
-    # Correct the expected ending based on test failure output
-    assert formatted_prompt.endswith("\nReview Output:\n")  # Removed asterisks
+    assert formatted_prompt.endswith("\nReview Output:\n")
