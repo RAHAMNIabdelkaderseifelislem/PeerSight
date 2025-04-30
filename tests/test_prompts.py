@@ -1,7 +1,6 @@
 # tests/test_prompts.py
 import sys
 from pathlib import Path
-import pytest
 
 # Add src directory to sys.path
 project_root = Path(__file__).parent.parent

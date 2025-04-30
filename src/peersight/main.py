@@ -4,12 +4,12 @@ Handles argument parsing and invokes the core review generation logic.
 """
 
 import argparse
-import sys
-import logging
 import json
+import logging
+import sys
 
 # It's good practice to have utils imported if needed, e.g., for write_text_file
-from . import core, config, __version__, utils, prompts  # Import prompts for headers
+from . import __version__, config, core, prompts, utils  # Import prompts for headers
 
 # Define logger at module level, configure it in setup_logging
 logger = logging.getLogger(__name__)
@@ -275,7 +275,7 @@ def run():
             f"An unexpected critical error occurred: {e}", exc_info=True
         )  # Log traceback
         print(
-            f"\nAn unexpected error occurred. Please check the logs for details.",
+            "\nAn unexpected error occurred. Please check the logs for details.",
             file=sys.stderr,
         )
         sys.exit(2)  # Use a different exit code for unexpected errors

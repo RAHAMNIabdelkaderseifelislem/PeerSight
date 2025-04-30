@@ -1,16 +1,18 @@
-import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Add src directory to sys.path
 project_root = Path(__file__).parent.parent
 src_path = project_root / "src"
 sys.path.insert(0, str(src_path))
 
-from peersight import utils
-from peersight import config
-from peersight import prompts  # Import prompts for markers
+from peersight import (
+    config,
+    prompts,  # Import prompts for markers
+    utils,
+)
 
 
 # --- Test Fixtures ---
@@ -178,7 +180,7 @@ def test_clean_llm_output_missing_recommendation_marker():
 
 def test_clean_llm_output_missing_summary_marker():
     """Test cleaning when the initial summary marker is missing."""
-    raw_output = f"""Here's the review:
+    raw_output = """Here's the review:
     Strengths: blah
     Weaknesses: blah
     Recommendation: Accept"""  # Missing ## Summary

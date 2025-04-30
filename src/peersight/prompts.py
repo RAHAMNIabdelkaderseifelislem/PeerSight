@@ -1,4 +1,3 @@
-import re  # Keep re if needed elsewhere, maybe not needed here anymore
 
 # --- Review Structure Constants ---
 REVIEW_SECTION_SUMMARY = "## Summary"

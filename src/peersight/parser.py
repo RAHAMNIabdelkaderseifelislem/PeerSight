@@ -1,6 +1,6 @@
-import re
 import logging
-from typing import Dict, Optional, List
+import re
+from typing import Dict, Optional
 
 from . import prompts
 

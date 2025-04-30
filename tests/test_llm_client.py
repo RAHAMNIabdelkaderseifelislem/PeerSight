@@ -1,16 +1,17 @@
-import pytest
-import requests
+import json
 import sys
 from pathlib import Path
-import json
+
+import requests
 
 # Add src directory to sys.path
 project_root = Path(__file__).parent.parent
 src_path = project_root / "src"
 sys.path.insert(0, str(src_path))
 
-from peersight import llm_client
-from peersight import config  # To check default URL/model if needed
+from peersight import (
+    llm_client,
+)
 
 # Test constants
 TEST_PROMPT = "What is the airspeed velocity of an unladen swallow?"
