@@ -12,21 +12,23 @@ from . import config
 logger = logging.getLogger(__name__)
 
 # Modify return type hint
+# Add temperature parameter
 def generate_review(paper_path: str,
-                    model_override: str = None,
-                    api_url_override: str = None
-                    ) -> Tuple[bool, Optional[Union[Dict, str]]]:
+                    model_override: Optional[str] = None,
+                    api_url_override: Optional[str] = None,
+                    temperature_override: Optional[float] = None # Add temp override
+                   ) -> Tuple[bool, Optional[Union[Dict, str]]]:
     """
     Orchestrates the academic paper review generation process.
-
-    Returns:
-        A tuple: (success_flag, result_data).
-        result_data is the parsed dictionary if successful, otherwise
-        the raw cleaned text string if parsing failed but cleaning succeeded,
-        or None if cleaning/generation failed earlier.
+    Accepts optional overrides for model, API URL, and temperature.
     """
     logger.info(f"Starting review generation for: {paper_path}")
-    # ... (logging overrides) ...
+    # ... (log model/URL overrides) ...
+    if model_override: logger.debug(f"Using CLI model override: {model_override}")
+    if api_url_override: logger.debug(f"Using CLI API URL override: {api_url_override}")
+    # Log temp override if present
+    if temperature_override is not None: logger.debug(f"Using CLI temperature override: {temperature_override}")
+
 
     # 1. Read Paper Content
     paper_content = utils.read_text_file(paper_path)
@@ -50,12 +52,13 @@ def generate_review(paper_path: str,
 
     # 3. Query LLM for Review
     logger.info("Sending request to LLM for paper review...")
-    raw_review_output = llm_client.query_ollama(prompt=review_prompt, model=model_override, api_url=api_url_override)
-    if not raw_review_output:
-         logger.error("Failed to get valid response from LLM. Aborting review.")
-         return False, None # Return failure, no data
-    logger.info("Received raw response from LLM.")
-
+    raw_review_output = llm_client.query_ollama(
+        prompt=review_prompt,
+        model=model_override,
+        api_url=api_url_override,
+        temperature=temperature_override # Pass temperature override
+    )
+    
     # 4. Clean LLM Output
     cleaned_review_text = utils.clean_llm_output(raw_review_output)
     if not cleaned_review_text:
