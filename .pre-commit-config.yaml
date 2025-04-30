@@ -1,0 +1,32 @@
+# .pre-commit-config.yaml
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+# Optional: Exclude files if needed (e.g., auto-generated files)
+# exclude: '^docs/.*$'
+
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0 # Use a specific tag or commit hash
+    hooks:
+    -   id: trailing-whitespace # Removes trailing whitespace
+    -   id: end-of-file-fixer   # Ensures files end with a newline
+    -   id: check-yaml          # Checks yaml files for parseable syntax
+    -   id: check-toml          # Checks toml files for parseable syntax
+    -   id: check-added-large-files # Prevents committing large files
+
+-   repo: https://github.com/psf/black
+    rev: 24.8.0 # Specify a recent stable version of black
+    hooks:
+    -   id: black
+        language_version: python3.11 # Match your project's Python version if needed
+
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    # Use the Ruff pre-commit repo for faster checks
+    rev: v0.5.5 # Specify a recent stable version of ruff
+    hooks:
+    # Run the linter (checks for errors)
+    -   id: ruff
+        args: [--fix, --exit-non-zero-on-fix] # Fix what's possible, fail if fixes were made
+    # Optional: Run the formatter (if you want ruff to format instead of/after black)
+    # -   id: ruff-format

@@ -54,6 +54,7 @@ dev = [
     # Add other dev tools like linters later (e.g., "black", "ruff")
     "black",
     "ruff",
+    "pre-commit", # Add pre-commit
 ]
 
 # Define where the package source code is located
