@@ -4,22 +4,32 @@ Handles argument parsing and invokes the core review generation logic.
 """
 
 import argparse
-import sys
-import logging
 import json
-from typing import Optional, Union, Dict, Any # Added Any
+import logging
+import sys
+from typing import Any, Dict, Optional, Union  # Added Any
 
-from . import core, config, __version__, utils, prompts
+from . import __version__, config, core, prompts, utils
 
 # Define logger at module level, configure it in setup_logging
 logger = logging.getLogger(__name__)
 
 
 def setup_logging(level=logging.INFO):
+    """Configures root logger."""
     root_logger = logging.getLogger()
-    if root_logger.hasHandlers(): root_logger.handlers.clear()
-    logging.basicConfig(level=level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S', handlers=[logging.StreamHandler(sys.stderr)])
-    global logger; logger = logging.getLogger(__name__); logger.debug("Root logger configured.")
+    if root_logger.hasHandlers():
+        root_logger.handlers.clear() # Moved clear to own line
+
+    logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        handlers=[logging.StreamHandler(sys.stderr)]
+    )
+    global logger
+    logger = logging.getLogger(__name__) # Separate line
+    logger.debug("Root logger configured.") # Separate line
 
 def setup_arg_parser():
     parser = argparse.ArgumentParser(description="PeerSight: AI Academic Paper Reviewer")
@@ -29,15 +39,17 @@ def setup_arg_parser():
     parser.add_argument("--model", help=f"Override the Ollama model (default: {config.OLLAMA_MODEL})")
     parser.add_argument("--api-url", help=f"Override the Ollama API URL (default: {config.OLLAMA_API_URL})")
     parser.add_argument("-t", "--temperature", type=float, default=None, help=f"Set LLM temperature (default: {config.OLLAMA_TEMPERATURE})")
-    parser.add_argument("--top-k", type=int, default=None, help=f"Set LLM top-k sampling (e.g., 40; default: Ollama internal)")
-    parser.add_argument("--top-p", type=float, default=None, help=f"Set LLM top-p nucleus sampling (e.g., 0.9; default: Ollama internal)")
+    parser.add_argument("--top-k", type=int, default=None, help="Set LLM top-k sampling (e.g., 40; default: Ollama internal)")
+    parser.add_argument("--top-p", type=float, default=None, help="Set LLM top-p nucleus sampling (e.g., 0.9; default: Ollama internal)")
     parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase output verbosity (-v for DEBUG, default is INFO)")
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     return parser
 
 def set_logging_level(verbosity_level):
-    if verbosity_level >= 1: level = logging.DEBUG
-    else: level = logging.INFO
+    if verbosity_level >= 1:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
     current_level_name = logging.getLevelName(logging.getLogger().getEffectiveLevel())
     new_level_name = logging.getLevelName(level)
     if current_level_name != new_level_name:
@@ -137,8 +149,10 @@ def run():
         logger.info(f"Effective LLM Top-P: {effective_top_p if effective_top_p is not None else 'Ollama Default'} {'(CLI override)' if effective_top_p is not None else ''}")
         logger.info(f"Processing request for paper: {args.paper_path}")
         output_format = "JSON" if args.json else "Text"
-        if args.output: logger.info(f"Output target: File '{args.output}' (Format: {output_format})")
-        else: logger.info(f"Output target: Console (Format: {output_format})")
+        if args.output:
+            logger.info(f"Output target: File '{args.output}' (Format: {output_format})")
+        else:
+            logger.info(f"Output target: Console (Format: {output_format})")
 
 
         print("-" * 30, file=sys.stderr)
@@ -172,7 +186,7 @@ def run():
 
     except Exception as e:
         logger.critical(f"An unexpected critical error occurred: {e}", exc_info=True)
-        print(f"\nAn unexpected error occurred. Please check the logs for details.", file=sys.stderr)
+        print("\nAn unexpected error occurred. Please check the logs for details.", file=sys.stderr)
         exit_code = 2 # Unexpected error code
 
     finally:
