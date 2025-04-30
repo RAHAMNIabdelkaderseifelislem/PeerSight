@@ -1,4 +1,3 @@
-
 # --- Review Structure Constants ---
 REVIEW_SECTION_SUMMARY = "## Summary"
 REVIEW_SECTION_STRENGTHS = "## Strengths"

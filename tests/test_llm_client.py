@@ -1,14 +1,15 @@
 import json
-import sys
+import sys  # Keep standard imports first
 from pathlib import Path
 
 import requests
 
-# Add src directory to sys.path
+# Add src directory to sys.path BEFORE importing peersight
 project_root = Path(__file__).parent.parent
 src_path = project_root / "src"
 sys.path.insert(0, str(src_path))
 
+# Now import from peersight
 from peersight import (
     llm_client,
 )

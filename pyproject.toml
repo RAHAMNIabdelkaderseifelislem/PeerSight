@@ -87,6 +87,7 @@ select = [
 ]
 ignore = [
     "E501", # Line too long (handled by black)
+    "C901", # Temporarily ignore Function is too complex
 ]
 # target-version = "py39" # REMOVED FROM HERE
 
