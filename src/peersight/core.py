@@ -67,8 +67,9 @@ def generate_review(paper_path: str,
     parsed_review = parser.parse_review_text(cleaned_review_text)
 
     if parsed_review is None:
-        logger.error("Failed to parse the cleaned review text into a structured format.")
-        # Return success=True (review was generated+cleaned) but data is the raw text
+        # Log clarified
+        logger.error("Failed to parse cleaned review text into structured data. Returning raw cleaned text instead.")
+        # Return success=True (review generated/cleaned) but data is the raw text
         return True, cleaned_review_text
     else:
         logger.info("Successfully parsed review into structured data.")

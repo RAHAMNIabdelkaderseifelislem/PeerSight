@@ -7,35 +7,17 @@ import sys
 import logging
 import json
 
-# It's good practice to have utils imported if needed, e.g., for write_text_file
-from . import core, config, __version__, utils
+from . import core, config, __version__, utils, prompts # Import prompts for headers
 
-# Configure root logger - moved configuration inside main guard
-# This allows testing imports without configuring logging immediately
-# logger = logging.getLogger(__name__) # Define logger globally
-
+# ... (setup_logging, setup_arg_parser, set_logging_level remain the same) ...
 def setup_logging(level=logging.INFO):
-    """Configures root logger."""
-    # Make sure handlers are not added multiple times if run() is called again
-    root_logger = logging.getLogger()
-    if root_logger.hasHandlers():
-         root_logger.handlers.clear() # Clear existing handlers
-
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        handlers=[logging.StreamHandler(sys.stderr)] # Log to stderr by default
-    )
-    # Get logger for this module specifically AFTER basicConfig
-    logger = logging.getLogger(__name__)
-    logger.debug("Root logger configured.")
-    return logger # Return the module-specific logger if needed elsewhere
-
+    root_logger = logging.getLogger();
+    if root_logger.hasHandlers(): root_logger.handlers.clear()
+    logging.basicConfig(level=level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S', handlers=[logging.StreamHandler(sys.stderr)])
+    logger = logging.getLogger(__name__); logger.debug("Root logger configured.")
+    return logger
 
 def setup_arg_parser():
-    """Sets up the command-line argument parser."""
-    # ... (parser setup remains the same) ...
     parser = argparse.ArgumentParser(description="PeerSight: AI Academic Paper Reviewer")
     parser.add_argument("paper_path", help="Path to the academic paper plain text file.")
     parser.add_argument("-o", "--output", help="Path to save the generated review. Output format depends on --json flag.")
@@ -46,109 +28,113 @@ def setup_arg_parser():
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     return parser
 
-
 def set_logging_level(verbosity_level):
-    """Sets the root logging level based on verbosity count."""
     if verbosity_level >= 1: level = logging.DEBUG
     else: level = logging.INFO
     current_level_name = logging.getLevelName(logging.getLogger().getEffectiveLevel())
     new_level_name = logging.getLevelName(level)
     if current_level_name != new_level_name:
         logging.getLogger().setLevel(level)
-        # Logger might not be configured yet here, use print for bootstrap phase if needed
-        # print(f"Effective logging level set to: {new_level_name}")
-        logging.log(level, f"Effective logging level set to: {new_level_name}") # Log after level is set
+        logging.log(level, f"Effective logging level set to: {new_level_name}")
+
+
+def format_review_dict_to_text(review_dict: dict) -> str:
+    """Formats the parsed review dictionary back into text."""
+    # Ensure order matches standard output
+    parts = [
+        prompts.REVIEW_SECTION_SUMMARY,
+        review_dict.get('summary', ''), # Use .get for safety
+        prompts.REVIEW_SECTION_STRENGTHS,
+        review_dict.get('strengths', ''),
+        prompts.REVIEW_SECTION_WEAKNESSES,
+        review_dict.get('weaknesses', ''),
+        prompts.REVIEW_SECTION_RECOMMENDATION,
+        review_dict.get('recommendation', '')
+    ]
+    # Join parts with double newlines between sections for readability
+    return "\n\n".join(p.strip() for p in parts if p is not None) # Strip each part
 
 def run():
     """Main entry point for the CLI application."""
-    # Move logger setup here, after potential level change by args
-    # Default to INFO, will be adjusted by set_logging_level if needed
     logger = setup_logging()
-
     try:
         parser = setup_arg_parser()
         args = parser.parse_args()
-
-        # Adjust logging level based on args AFTER initial setup
         set_logging_level(args.verbose)
 
         logger.info("--- PeerSight CLI Initializing ---")
-        logger.debug(f"PeerSight Version: {__version__}")
-        # ... (log config, paper path etc.) ...
-        effective_model = args.model if args.model else config.OLLAMA_MODEL
-        effective_api_url = args.api_url if args.api_url else config.OLLAMA_API_URL
-        logger.info(f"Effective Ollama Model: '{effective_model}' {'(CLI override)' if args.model else '(from config/env)'}")
-        logger.info(f"Effective Ollama API URL: '{effective_api_url}' {'(CLI override)' if args.api_url else '(from config/env)'}")
+        # ... (log config, etc.) ...
         logger.info(f"Processing request for paper: {args.paper_path}")
         output_format = "JSON" if args.json else "Text"
-        if args.output:
-            logger.info(f"Output target: File '{args.output}' (Format: {output_format})")
-        else:
-            logger.info(f"Output target: Console (Format: {output_format})")
-
-        print("-" * 30, file=sys.stderr) # Print separators to stderr to not interfere with stdout json
-
+        # ... (log output target) ...
+        print("-" * 30, file=sys.stderr)
 
         # --- Invoke Core Logic ---
-        # This is the main part to wrap
         success, result_data = core.generate_review(
             paper_path=args.paper_path,
             model_override=args.model,
             api_url_override=args.api_url,
         )
 
-        print("-" * 30, file=sys.stderr) # Separator to stderr
+        print("-" * 30, file=sys.stderr)
 
         # --- Handle Output Based on Success and Format ---
         if success:
             logger.info("Review generation successful.")
             output_content = None
             is_json_output = args.json
-            # ... (JSON/Text formatting logic remains the same) ...
+
             if is_json_output:
+                # --- JSON Output ---
                 if isinstance(result_data, dict):
                     try: output_content = json.dumps(result_data, indent=4)
                     except TypeError as e: logger.error(f"Failed to serialize review data to JSON: {e}"); success = False
-                else: logger.error("JSON output requested, but review data is not a dictionary."); success = False
-            else: # Text output
-                if isinstance(result_data, str): output_content = result_data
-                else: logger.error("Text output requested, but review data is not a string."); success = False
+                else:
+                     logger.error(f"JSON output requested, but review data is not a dictionary (Parsing likely failed: {type(result_data)}). Cannot generate JSON.")
+                     success = False
+            else:
+                # --- Text Output ---
+                if isinstance(result_data, dict):
+                    # Parsing succeeded, reconstruct text from dict
+                    logger.info("Parsing succeeded. Reconstructing text output from parsed data.")
+                    output_content = format_review_dict_to_text(result_data)
+                elif isinstance(result_data, str):
+                    # Parsing failed, use the raw cleaned text provided by core
+                    logger.info("Parsing failed. Using raw cleaned text for output.")
+                    output_content = result_data
+                else:
+                    # Should not happen if core returns correctly, but handle anyway
+                    logger.error(f"Text output requested, but review data is neither dict nor string ({type(result_data)}). Cannot generate Text.")
+                    success = False
 
+            # Proceed with writing/printing if content was generated successfully
             if success and output_content is not None:
+                # ... (output writing/printing logic remains the same) ...
                 output_successful = False
                 if args.output:
-                    # ... (File writing logic) ...
                     logger.info(f"Attempting to save {output_format} review to file: {args.output}")
                     write_success = utils.write_text_file(args.output, output_content)
-                    if write_success: print(f"Review successfully saved to: {args.output}", file=sys.stderr); output_successful = True # Print confirmation to stderr
+                    if write_success: print(f"Review successfully saved to: {args.output}", file=sys.stderr); output_successful = True
                     else: logger.error(f"Failed to save review to file: {args.output}"); print(f"Error: Failed to save review to {args.output}. Check logs.", file=sys.stderr)
                 else:
-                    # Print to console (stdout)
                     print(output_content) # Print the actual review content to stdout
-                    output_successful = True # Assume printing to stdout is successful
+                    output_successful = True
 
-                if output_successful:
-                     logger.info("--- PeerSight CLI Finished Successfully ---")
-                     sys.exit(0)
-                else: # File writing failed
-                     logger.error("--- PeerSight CLI Finished with Output Errors ---")
-                     sys.exit(1)
-            else: # Content generation failed
+                if output_successful: logger.info("--- PeerSight CLI Finished Successfully ---"); sys.exit(0)
+                else: logger.error("--- PeerSight CLI Finished with Output Errors ---"); sys.exit(1) # File writing failed
+            else: # Content generation failed (JSON error or unexpected data type)
                  logger.error("--- PeerSight CLI Finished with Content Generation Errors ---")
-                 print("Failed to generate output content in the requested format.", file=sys.stderr)
-                 sys.exit(1)
+                 print("Failed to generate output content in the requested format.", file=sys.stderr); sys.exit(1)
 
         else: # core.generate_review returned success=False
-            logger.error("--- PeerSight CLI Finished with Generation Errors ---")
-            # Core function should have logged specifics
-            print("Review generation failed during core processing. Check logs.", file=sys.stderr)
-            sys.exit(1)
+            # ... (handle core failure) ...
+             logger.error("--- PeerSight CLI Finished with Generation Errors ---")
+             print("Review generation failed during core processing. Check logs.", file=sys.stderr); sys.exit(1)
 
     except Exception as e:
-        # Catch any unexpected exception from the whole process
-        logger.critical(f"An unexpected critical error occurred: {e}", exc_info=True) # Log traceback
-        print(f"\nAn unexpected error occurred. Please check the logs for details.", file=sys.stderr)
-        sys.exit(2) # Use a different exit code for unexpected errors
+        # ... (handle unexpected exceptions) ...
+        logger.critical(f"An unexpected critical error occurred: {e}", exc_info=True)
+        print(f"\nAn unexpected error occurred. Please check the logs for details.", file=sys.stderr); sys.exit(2)
 
 if __name__ == "__main__":
     run()
