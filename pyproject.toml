@@ -36,6 +36,7 @@ classifiers = [
 dependencies = [
     "python-dotenv",
     "requests",
+    "pypdf",
     # Testing dependencies are often handled separately (see [project.optional-dependencies])
 ]
 
@@ -55,6 +56,8 @@ dev = [
     "black",
     "ruff",
     "pre-commit", # Add pre-commit
+    "twine",
+    "pypdf",
 ]
 
 # Define where the package source code is located
@@ -100,6 +103,6 @@ ignore = [
 # quote-style = "double"
 
 # Optional: Define URLs for repository, documentation, etc.
-# [project.urls]
-# "Homepage" = "https://github.com/RAHAMNIabdelkaderseifelislem/PeerSight"
-# "Bug Tracker" = "https://github.com/RAHAMNIabdelkaderseifelislem/PeerSight/issues"
+[project.urls]
+"Homepage" = "https://github.com/RAHAMNIabdelkaderseifelislem/PeerSight"
+"Bug Tracker" = "https://github.com/RAHAMNIabdelkaderseifelislem/PeerSight/issues"

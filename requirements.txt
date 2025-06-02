@@ -7,3 +7,6 @@ requests
 # Testing
 pytest
 pytest-mock
+
+# PDF file handling
+pypdf

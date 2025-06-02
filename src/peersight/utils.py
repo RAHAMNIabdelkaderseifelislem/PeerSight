@@ -1,8 +1,19 @@
 import logging
 import os
 import re
+from pathlib import Path
+from typing import Optional  # Import Optional
 
 from . import config, prompts
+
+# Import pypdf
+try:
+    from pypdf import PdfReader
+
+    PYPDF_AVAILABLE = True
+except ImportError:
+    PYPDF_AVAILABLE = False
+    PdfReader = None  # Placeholder
 
 # Adjust logging level as needed for debugging
 logging.basicConfig(
@@ -14,33 +25,102 @@ logger = logging.getLogger(__name__)
 
 
 # --- File Reading ---
-def read_text_file(file_path: str, encoding: str = None) -> str | None:
-    # ... (keep existing read_text_file function) ...
+# --- File Reading (Unified) ---
+def read_paper_file(file_path_str: str) -> Optional[str]:
+    """
+    Reads content from a text file or extracts text from a PDF file.
+
+    Args:
+        file_path_str: The path to the input file (.txt or .pdf).
+
+    Returns:
+        The content/extracted text as a string, or None if an error occurs.
+    """
+    file_path = Path(file_path_str)  # Convert to Path object for convenience
+    file_extension = file_path.suffix.lower()
+
+    if not file_path.is_file():
+        logger.error(f"File Not Found Error: The file '{file_path_str}' was not found.")
+        return None
+
+    if file_extension == ".txt":
+        return _read_text_file_content(str(file_path))
+    elif file_extension == ".pdf":
+        if not PYPDF_AVAILABLE:
+            logger.error(
+                "PDF processing requires the 'pypdf' library. Please install it: pip install pypdf"
+            )
+            return None
+        return _read_pdf_file_content(str(file_path))
+    else:
+        logger.error(
+            f"Unsupported file type: '{file_extension}'. Please provide a .txt or .pdf file."
+        )
+        return None
+
+
+def _read_text_file_content(file_path: str, encoding: str = None) -> Optional[str]:
+    """Reads the content of a text file (Helper)."""
     resolved_encoding = encoding if encoding else config.DEFAULT_ENCODING
     logger.info(
-        f"Attempting to read file: {file_path} with encoding {resolved_encoding}"
+        f"Attempting to read text file: {file_path} with encoding {resolved_encoding}"
     )
     try:
         with open(file_path, "r", encoding=resolved_encoding) as f:
             content = f.read()
-        logger.info(f"Successfully read {len(content)} characters from {file_path}")
-        return content
-    except FileNotFoundError:
-        logger.error(f"File Not Found Error: The file '{file_path}' was not found.")
-        return None
-    except IOError as e:
-        logger.error(
-            f"IO Error: An error occurred while reading the file '{file_path}'. Details: {e}"
+        logger.info(
+            f"Successfully read {len(content)} characters from text file {file_path}"
         )
+        return content
+    except IOError as e:  # Catches FileNotFoundError, PermissionError, etc.
+        logger.error(f"IO Error reading text file '{file_path}'. Details: {e}")
         return None
     except UnicodeDecodeError as e:
         logger.error(
-            f"Encoding Error: Failed to decode file '{file_path}' with encoding '{resolved_encoding}'. Try specifying a different encoding. Details: {e}"
+            f"Encoding Error: Failed to decode text file '{file_path}' with encoding '{resolved_encoding}'. Details: {e}"
         )
         return None
     except Exception as e:
         logger.error(
-            f"An unexpected error occurred while reading file '{file_path}': {e}",
+            f"An unexpected error occurred while reading text file '{file_path}': {e}",
+            exc_info=True,
+        )
+        return None
+
+
+def _read_pdf_file_content(file_path: str) -> Optional[str]:
+    """Extracts text content from a PDF file (Helper)."""
+    logger.info(f"Attempting to read PDF file: {file_path}")
+    if not PYPDF_AVAILABLE or PdfReader is None:  # Double check
+        logger.critical(
+            "pypdf.PdfReader not available for PDF processing. This should not happen if PYPDF_AVAILABLE is True."
+        )
+        return None
+    try:
+        reader = PdfReader(file_path)
+        text_parts = []
+        for page_num, page in enumerate(reader.pages):
+            try:
+                text_parts.append(page.extract_text())
+            except Exception as page_e:
+                logger.warning(
+                    f"Could not extract text from page {page_num + 1} of PDF '{file_path}'. Skipping. Error: {page_e}"
+                )
+
+        full_text = "\n".join(filter(None, text_parts))  # Join non-empty page texts
+        if not full_text.strip():
+            logger.warning(
+                f"Extracted text from PDF '{file_path}' is empty or only whitespace."
+            )
+            # Return empty string instead of None, to distinguish from file read error
+            return ""
+        logger.info(
+            f"Successfully extracted {len(full_text)} characters from PDF file {file_path}"
+        )
+        return full_text
+    except Exception as e:
+        logger.error(
+            f"An error occurred while reading PDF file '{file_path}': {e}",
             exc_info=True,
         )
         return None

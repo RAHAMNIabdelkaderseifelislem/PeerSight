@@ -36,7 +36,7 @@ def generate_review(
         logger.debug(f"Using CLI top_p override: {top_p_override}")
 
     # 1. Read Paper Content
-    paper_content = utils.read_text_file(paper_path)
+    paper_content = utils.read_paper_file(paper_path)  # Changed this line
     paper_length = 0
     if paper_content is not None:
         paper_length = len(paper_content)

@@ -1,5 +1,6 @@
 # Python virtual environment
 venv/
+test_install_venv/
 __pycache__/
 *.pyc
 .env
