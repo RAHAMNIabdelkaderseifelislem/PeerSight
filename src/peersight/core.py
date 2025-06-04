@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Dict, Optional, Tuple, Union  # For type hints
 
-from . import config, llm_client, parser, prompts, utils
+from . import agent, config, llm_client, parser, prompts, utils
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +53,48 @@ def generate_review(
             f"Input paper length ({paper_length} chars) exceeds threshold ({config.MAX_PAPER_LENGTH_WARN_THRESHOLD} chars). Processing may be slow or fail."
         )
 
-    # 2. Generate Review Prompt
+    # --- TEMP: Extract "Abstract" ---
+    # This is a placeholder. Real abstract extraction is complex.
+    # For now, take the first N characters or up to the first double newline.
+    first_double_newline = paper_content.find("\n\n")
+    if (
+        first_double_newline != -1 and first_double_newline < 1500
+    ):  # Arbitrary length for "abstract"
+        paper_abstract_for_specialty = paper_content[:first_double_newline].strip()
+    else:
+        paper_abstract_for_specialty = paper_content[
+            :1000
+        ].strip()  # Fallback to first 1000 chars
+    logger.debug(
+        f"Using pseudo-abstract for specialty: '{paper_abstract_for_specialty[:100]}...'"
+    )
+
+    # --- Instantiate and Use Editor Agent (Placeholder) ---
+    # Use effective LLM params if overridden, else defaults from config used by llm_client
+    # The agent itself doesn't have its own config values yet, it passes them to llm_client
+    editor_llm_temp = 0.3  # Specific low temp for classification
+    editor_agent = agent.EditorAgent(
+        model=model_override,  # Pass along overrides
+        api_url=api_url_override,
+        temperature=editor_llm_temp,  # Use specific temp for this task
+    )
+    determined_specialty = editor_agent.determine_paper_specialty(
+        paper_abstract_for_specialty
+    )
+
+    if determined_specialty:
+        logger.info(f"Editor Agent determined specialty: {determined_specialty}")
+        # We will use this specialty in the next steps for the Reviewer Agent's prompt
+    else:
+        logger.warning(
+            "Could not determine paper specialty. Proceeding with generic review."
+        )
+        determined_specialty = "General Academic"  # Fallback
+
+    # 2. Generate Review Prompt (This will be modified later to include specialty)
+    # For now, it remains the same
     review_prompt = prompts.format_review_prompt(paper_content)
-    logger.info("Generated review prompt for LLM.")
+    logger.info("Generated review prompt for LLM (currently generic).")
     logger.debug(f"Prompt length: {len(review_prompt)} characters.")
 
     # 3. Query LLM for Review

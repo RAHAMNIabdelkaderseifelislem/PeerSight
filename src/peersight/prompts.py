@@ -1,4 +1,5 @@
 import textwrap  # Import textwrap
+from typing import Optional
 
 # --- Review Structure Constants ---
 REVIEW_SECTION_SUMMARY = "## Summary"
@@ -35,6 +36,39 @@ PEER_REVIEW_PROMPT_TEMPLATE = textwrap.dedent(
     Review Output:
     """
 )  # Dedent automatically handles the closing """
+
+# --- New Prompt for Specialty Determination ---
+SPECIALTY_DETERMINATION_PROMPT_TEMPLATE = textwrap.dedent(
+    """
+    You are an expert academic editor tasked with classifying research papers.
+    Based on the provided abstract and optional keywords, determine the primary academic specialty or sub-field of this paper.
+
+    **Instructions:**
+    1.  Analyze the abstract and keywords carefully.
+    2.  Identify the most specific and relevant academic discipline and sub-discipline.
+    3.  Provide ONLY the specialty name as your response.
+    4.  Format: "Primary Field - Sub-Field" (e.g., "Computer Science - Artificial Intelligence", "Biology - Molecular Biology", "History - European Renaissance"). If a sub-field isn't clear, provide the primary field (e.g., "Philosophy").
+    5.  Do NOT include any preamble, explanation, or conversational text. Your entire output must be the specialty string.
+
+    **Paper Abstract:**
+    {paper_abstract}
+
+    **Keywords (if provided):**
+    {paper_keywords}
+
+    **Academic Specialty:**
+    """
+)  # Priming the LLM for the direct answer
+
+
+def format_specialty_determination_prompt(
+    paper_abstract: str, paper_keywords: Optional[str] = None
+) -> str:
+    """Formats the prompt for determining paper specialty."""
+    keywords_text = paper_keywords if paper_keywords else "Not provided"
+    return SPECIALTY_DETERMINATION_PROMPT_TEMPLATE.format(
+        paper_abstract=paper_abstract, paper_keywords=keywords_text
+    )
 
 
 def format_review_prompt(paper_content: str) -> str:

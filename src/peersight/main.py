@@ -19,31 +19,74 @@ def setup_logging(level=logging.INFO):
     """Configures root logger."""
     root_logger = logging.getLogger()
     if root_logger.hasHandlers():
-        root_logger.handlers.clear() # Moved clear to own line
+        root_logger.handlers.clear()  # Moved clear to own line
 
     logging.basicConfig(
         level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        handlers=[logging.StreamHandler(sys.stderr)]
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[logging.StreamHandler(sys.stderr)],
     )
     global logger
-    logger = logging.getLogger(__name__) # Separate line
-    logger.debug("Root logger configured.") # Separate line
+    logger = logging.getLogger(__name__)  # Separate line
+    logger.debug("Root logger configured.")  # Separate line
+
 
 def setup_arg_parser():
-    parser = argparse.ArgumentParser(description="PeerSight: AI Academic Paper Reviewer")
-    parser.add_argument("paper_path", help="Path to the academic paper plain text file.")
-    parser.add_argument("-o", "--output", help="Path to save the generated review. Output format depends on --json flag.")
-    parser.add_argument("--json", action="store_true", help="Output the review in JSON format instead of plain text.")
-    parser.add_argument("--model", help=f"Override the Ollama model (default: {config.OLLAMA_MODEL})")
-    parser.add_argument("--api-url", help=f"Override the Ollama API URL (default: {config.OLLAMA_API_URL})")
-    parser.add_argument("-t", "--temperature", type=float, default=None, help=f"Set LLM temperature (default: {config.OLLAMA_TEMPERATURE})")
-    parser.add_argument("--top-k", type=int, default=None, help="Set LLM top-k sampling (e.g., 40; default: Ollama internal)")
-    parser.add_argument("--top-p", type=float, default=None, help="Set LLM top-p nucleus sampling (e.g., 0.9; default: Ollama internal)")
-    parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase output verbosity (-v for DEBUG, default is INFO)")
-    parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
+    parser = argparse.ArgumentParser(
+        description="PeerSight: AI Academic Paper Reviewer"
+    )
+    parser.add_argument(
+        "paper_path", help="Path to the academic paper plain text file."
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Path to save the generated review. Output format depends on --json flag.",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output the review in JSON format instead of plain text.",
+    )
+    parser.add_argument(
+        "--model", help=f"Override the Ollama model (default: {config.OLLAMA_MODEL})"
+    )
+    parser.add_argument(
+        "--api-url",
+        help=f"Override the Ollama API URL (default: {config.OLLAMA_API_URL})",
+    )
+    parser.add_argument(
+        "-t",
+        "--temperature",
+        type=float,
+        default=None,
+        help=f"Set LLM temperature (default: {config.OLLAMA_TEMPERATURE})",
+    )
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=None,
+        help="Set LLM top-k sampling (e.g., 40; default: Ollama internal)",
+    )
+    parser.add_argument(
+        "--top-p",
+        type=float,
+        default=None,
+        help="Set LLM top-p nucleus sampling (e.g., 0.9; default: Ollama internal)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase output verbosity (-v for DEBUG, default is INFO)",
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
     return parser
+
 
 def set_logging_level(verbosity_level):
     if verbosity_level >= 1:
@@ -61,10 +104,14 @@ def format_review_dict_to_text(review_dict: Dict[str, Any]) -> str:
     """Formats the parsed review dictionary back into text."""
     # ... (Keep this helper function as is) ...
     parts = [
-        prompts.REVIEW_SECTION_SUMMARY, review_dict.get('summary', ''),
-        prompts.REVIEW_SECTION_STRENGTHS, review_dict.get('strengths', ''),
-        prompts.REVIEW_SECTION_WEAKNESSES, review_dict.get('weaknesses', ''),
-        prompts.REVIEW_SECTION_RECOMMENDATION, review_dict.get('recommendation', '')
+        prompts.REVIEW_SECTION_SUMMARY,
+        review_dict.get("summary", ""),
+        prompts.REVIEW_SECTION_STRENGTHS,
+        review_dict.get("strengths", ""),
+        prompts.REVIEW_SECTION_WEAKNESSES,
+        review_dict.get("weaknesses", ""),
+        prompts.REVIEW_SECTION_RECOMMENDATION,
+        review_dict.get("recommendation", ""),
     ]
     return "\n\n".join(p.strip() for p in parts if p is not None)
 
@@ -77,7 +124,7 @@ def handle_output(
     """Handles formatting and writing/printing the output."""
     output_content: Optional[str] = None
     output_format = "JSON" if is_json_output else "Text"
-    success = True # Assume success unless formatting fails
+    success = True  # Assume success unless formatting fails
 
     if is_json_output:
         # --- JSON Output ---
@@ -88,7 +135,9 @@ def handle_output(
                 logger.error(f"Failed to serialize review data to JSON: {e}")
                 success = False
         else:
-            logger.error(f"JSON output requested, but review data is {type(result_data)}. Cannot generate JSON.")
+            logger.error(
+                f"JSON output requested, but review data is {type(result_data)}. Cannot generate JSON."
+            )
             success = False
     else:
         # --- Text Output ---
@@ -99,39 +148,50 @@ def handle_output(
             logger.debug("Using raw cleaned text for output.")
             output_content = result_data
         else:
-            logger.error(f"Text output requested, but review data is {type(result_data)}. Cannot generate Text.")
+            logger.error(
+                f"Text output requested, but review data is {type(result_data)}. Cannot generate Text."
+            )
             success = False
 
     # Proceed with writing/printing only if formatting succeeded
     if success and output_content is not None:
         if output_path:
-            logger.info(f"Attempting to save {output_format} review to file: {output_path}")
+            logger.info(
+                f"Attempting to save {output_format} review to file: {output_path}"
+            )
             write_success = utils.write_text_file(output_path, output_content)
             if write_success:
                 print(f"Review successfully saved to: {output_path}", file=sys.stderr)
-                return True # Overall output success
+                return True  # Overall output success
             else:
                 logger.error(f"Failed to save review to file: {output_path}")
-                print(f"Error: Failed to save review to {output_path}. Check logs.", file=sys.stderr)
-                return False # Output failed
+                print(
+                    f"Error: Failed to save review to {output_path}. Check logs.",
+                    file=sys.stderr,
+                )
+                return False  # Output failed
         else:
             # Print to console (stdout)
-            print(output_content) # Print the actual review content to stdout
-            return True # Overall output success
+            print(output_content)  # Print the actual review content to stdout
+            return True  # Overall output success
     else:
         # Formatting failed or content was None
         logger.error("Failed to generate output content in the requested format.")
-        print("Failed to generate output content in the requested format.", file=sys.stderr)
-        return False # Output failed
+        print(
+            "Failed to generate output content in the requested format.",
+            file=sys.stderr,
+        )
+        return False  # Output failed
+
 
 def run():
     """Main entry point for the CLI application."""
-    setup_logging() # Configure logging first
-    exit_code = 0 # Default success exit code
+    setup_logging()  # Configure logging first
+    exit_code = 0  # Default success exit code
     try:
         parser = setup_arg_parser()
         args = parser.parse_args()
-        set_logging_level(args.verbose) # Set level based on args
+        set_logging_level(args.verbose)  # Set level based on args
 
         # --- Log Initial Config ---
         logger.info("--- PeerSight CLI Initializing ---")
@@ -139,21 +199,36 @@ def run():
         logger.debug(f"PeerSight Version: {__version__}")
         effective_model = args.model if args.model else config.OLLAMA_MODEL
         effective_api_url = args.api_url if args.api_url else config.OLLAMA_API_URL
-        effective_temperature = args.temperature if args.temperature is not None else config.OLLAMA_TEMPERATURE
+        effective_temperature = (
+            args.temperature
+            if args.temperature is not None
+            else config.OLLAMA_TEMPERATURE
+        )
         effective_top_k = args.top_k
         effective_top_p = args.top_p
-        logger.info(f"Effective Ollama Model: '{effective_model}' {'(CLI override)' if args.model else '(from config/env)'}")
-        logger.info(f"Effective Ollama API URL: '{effective_api_url}' {'(CLI override)' if args.api_url else '(from config/env)'}")
-        logger.info(f"Effective LLM Temperature: {effective_temperature} {'(CLI override)' if args.temperature is not None else '(from config/env)'}")
-        logger.info(f"Effective LLM Top-K: {effective_top_k if effective_top_k is not None else 'Ollama Default'} {'(CLI override)' if effective_top_k is not None else ''}")
-        logger.info(f"Effective LLM Top-P: {effective_top_p if effective_top_p is not None else 'Ollama Default'} {'(CLI override)' if effective_top_p is not None else ''}")
+        logger.info(
+            f"Effective Ollama Model: '{effective_model}' {'(CLI override)' if args.model else '(from config/env)'}"
+        )
+        logger.info(
+            f"Effective Ollama API URL: '{effective_api_url}' {'(CLI override)' if args.api_url else '(from config/env)'}"
+        )
+        logger.info(
+            f"Effective LLM Temperature: {effective_temperature} {'(CLI override)' if args.temperature is not None else '(from config/env)'}"
+        )
+        logger.info(
+            f"Effective LLM Top-K: {effective_top_k if effective_top_k is not None else 'Ollama Default'} {'(CLI override)' if effective_top_k is not None else ''}"
+        )
+        logger.info(
+            f"Effective LLM Top-P: {effective_top_p if effective_top_p is not None else 'Ollama Default'} {'(CLI override)' if effective_top_p is not None else ''}"
+        )
         logger.info(f"Processing request for paper: {args.paper_path}")
         output_format = "JSON" if args.json else "Text"
         if args.output:
-            logger.info(f"Output target: File '{args.output}' (Format: {output_format})")
+            logger.info(
+                f"Output target: File '{args.output}' (Format: {output_format})"
+            )
         else:
             logger.info(f"Output target: Console (Format: {output_format})")
-
 
         print("-" * 30, file=sys.stderr)
 
@@ -178,16 +253,22 @@ def run():
                 exit_code = 0
             else:
                 logger.error("--- PeerSight CLI Finished with Output Errors ---")
-                exit_code = 1 # Specific exit code for output failure
+                exit_code = 1  # Specific exit code for output failure
         else:
             logger.error("--- PeerSight CLI Finished with Generation Errors ---")
-            print("Review generation failed during core processing. Check logs.", file=sys.stderr)
-            exit_code = 1 # Same code for core or output failure? Maybe distinguish? Let's use 1 for now.
+            print(
+                "Review generation failed during core processing. Check logs.",
+                file=sys.stderr,
+            )
+            exit_code = 1  # Same code for core or output failure? Maybe distinguish? Let's use 1 for now.
 
     except Exception as e:
         logger.critical(f"An unexpected critical error occurred: {e}", exc_info=True)
-        print("\nAn unexpected error occurred. Please check the logs for details.", file=sys.stderr)
-        exit_code = 2 # Unexpected error code
+        print(
+            "\nAn unexpected error occurred. Please check the logs for details.",
+            file=sys.stderr,
+        )
+        exit_code = 2  # Unexpected error code
 
     finally:
         # Ensure sys.exit is called outside the main try block if needed
