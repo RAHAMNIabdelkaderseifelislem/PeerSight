@@ -45,47 +45,69 @@ def format_specialty_determination_prompt(
 
 STRICT_PEER_REVIEW_PROMPT_TEMPLATE = textwrap.dedent(
     """
-You are an expert academic journal reviewer tasked with providing a rigorous, structured, and impartial peer review.
+You are an expert academic journal reviewer providing a rigorous, structured, and impartial peer review.
 The paper's determined primary academic specialty is: **{paper_specialty}**.
-Your review should critically assess the paper's general academic merit AND its suitability and contribution specifically within the context of **{paper_specialty}**.
+Your review should critically assess general academic merit AND suitability/contribution within **{paper_specialty}**.
 
 **CRITICAL INSTRUCTIONS FOR OUTPUT FORMATTING:**
-1.  Your ENTIRE response MUST begin *exactly* with "## Summary" and end *exactly* after the single-word/phrase recommendation.
-2.  Do NOT include ANY preamble, apologies, self-correction, conversational text, or any text outside the defined section structure.
-3.  Each section header (e.g., "## Summary") MUST be on its own line, followed by its content.
-4.  Use Markdown for bullet points (`- `) within Strengths and Weaknesses.
+1.  ENTIRE response MUST begin *exactly* with "## Summary" and end *exactly* after the recommendation.
+2.  NO preamble, apologies, self-correction, or conversational text outside the defined structure.
+3.  Each main section header (e.g., "## Summary", "## Strengths") MUST be on its own line.
+4.  Sub-criteria headers (e.g., "### Originality & Novelty") MUST also be on their own lines.
+5.  Provide comments or bullet points (`- `) under each sub-criterion. If a sub-criterion is not applicable or no specific comment, state "N/A" or "No specific comments."
 
 **REVIEW STRUCTURE & GUIDELINES:**
 
 {summary_section_header}
-Provide a concise (3-5 sentences) summary covering:
-- The paper's primary research question or objective(s).
-- The core methodology employed.
-- The most significant findings and conclusions.
-- The purported contribution to the field of **{paper_specialty}**. Comment on whether the abstract accurately reflects this.
+(Concise 3-5 sentences: research question, methodology, key findings/conclusions, purported contribution to **{paper_specialty}**, abstract accuracy)
 
 {strengths_section_header}
-Identify and articulate the paper's most significant strengths using bullet points. For each strength, briefly explain *why* it is a strength. Consider its relevance to **{paper_specialty}**:
-- **Originality & Novelty:** (e.g., "- The work presents a novel approach to [problem] by [method/idea] within {paper_specialty}, which has not been explored previously in this context.")
-- **Significance & Impact:** (e.g., "- The findings offer substantial insights into [area], potentially influencing future research and practice within {paper_specialty}.")
-- **Methodological Rigor:** (e.g., "- The research design is sound and appropriate for addressing the research question; methods are consistent with established practices in {paper_specialty} and are well-executed.")
-- **Clarity & Presentation:** (e.g., "- The paper is exceptionally well-written and logically structured, making complex ideas accessible to an audience familiar with {paper_specialty}.")
-- **Evidence & Argumentation:** (e.g., "- Claims are consistently well-supported by strong empirical evidence and logical reasoning, meeting the standards expected in {paper_specialty}.")
+(For each sub-criterion below, provide specific comments or bullet points explaining *why* it's a strength, considering relevance to **{paper_specialty}**. If no specific strength, state "No specific strengths noted for this criterion.")
+
+### Originality & Novelty
+(e.g., "- The work presents a novel approach to [problem] by [method/idea] within {paper_specialty}...")
+
+### Significance & Impact
+(e.g., "- The findings offer substantial insights into [area], potentially influencing future research in {paper_specialty}...")
+
+### Methodological Rigor
+(e.g., "- The research design is sound; methods are consistent with practices in {paper_specialty} and well-executed...")
+
+### Clarity & Presentation
+(e.g., "- The paper is exceptionally well-written and logically structured, accessible to an audience familiar with {paper_specialty}...")
+
+### Evidence & Argumentation
+(e.g., "- Claims are consistently well-supported by strong evidence and logical reasoning, meeting standards in {paper_specialty}...")
 
 {weaknesses_section_header}
-Identify and articulate the paper's most critical weaknesses or areas requiring improvement using bullet points. For each weakness, explain *why* it is a concern and, if possible, suggest specific ways it could be addressed. Consider its relevance to **{paper_specialty}**:
-- **Scope & Fit for Specialty:** (e.g., "- The paper's scope may be too narrow/broad for a typical contribution to {paper_specialty}, or it may not clearly align with the central themes/debates in this field.")
-- **Originality & Novelty:** (e.g., "- The contribution appears incremental, building only marginally on existing work in {paper_specialty} without offering significant new perspectives relevant to this field.")
-- **Significance & Impact:** (e.g., "- The practical or theoretical implications of the findings for {paper_specialty} are unclear or not sufficiently demonstrated.")
-- **Methodological Flaws:** (e.g., "- The study suffers from [specific flaw, e.g., inappropriate for {paper_specialty}], which limits the validity of the conclusions within this field.")
-- **Clarity & Presentation:** (e.g., "- Certain sections use jargon that may not be standard in {paper_specialty} or are poorly organized, hindering comprehension.")
-- **Evidence & Argumentation:** (e.g., "- Conclusions are not adequately supported by the presented data/evidence to meet the rigor expected in {paper_specialty}.")
-- **Literature Review:** (e.g., "- The literature review overlooks key relevant studies specific to {paper_specialty} or fails to adequately contextualize the research within this field.")
-- **Ethical Concerns (if applicable).**
+(For each sub-criterion below, provide specific comments or bullet points explaining *why* it's a weakness and suggest improvements, considering relevance to **{paper_specialty}**. If no specific weakness, state "No specific weaknesses noted for this criterion.")
+
+### Scope & Fit for Specialty
+(e.g., "- The paper's scope may be too narrow/broad for {paper_specialty}, or not clearly aligned with its central themes...")
+
+### Originality & Novelty
+(e.g., "- The contribution appears incremental, marginally building on existing work in {paper_specialty}...")
+
+### Significance & Impact
+(e.g., "- Implications of findings for {paper_specialty} are unclear or not sufficiently demonstrated...")
+
+### Methodological Flaws
+(e.g., "- The study suffers from [specific flaw, e.g., inappropriate for {paper_specialty}], limiting conclusions...")
+
+### Clarity & Presentation
+(e.g., "- Certain sections use jargon not standard in {paper_specialty} or are poorly organized...")
+
+### Evidence & Argumentation
+(e.g., "- Conclusions are not adequately supported by presented data to meet rigor expected in {paper_specialty}...")
+
+### Literature Review
+(e.g., "- Overlooks key relevant studies specific to {paper_specialty} or fails to contextualize the research adequately...")
+
+### Ethical Concerns (if applicable)
+(State "N/A" if no concerns)
 
 {recommendation_section_header}
-State ONE of the following recommendations: {recommendation_options_str}.
-(Provide NO other text in this section).
+(State ONE: {recommendation_options_str}. NO other text.)
 
 **Paper Text to Review:**
 --- START PAPER ---
