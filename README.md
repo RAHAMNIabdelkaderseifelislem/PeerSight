@@ -1,6 +1,6 @@
 # PeerSight - AI Academic Paper Reviewer
 
-**Version:** 0.1.0
+**Version:** 0.1.1
 
 PeerSight is an AI-powered command-line tool designed to automate and enhance the academic paper review process. It acts like a virtual journal reviewer, leveraging local Large Language Models (LLMs) via Ollama to provide structured peer reviews of research papers supplied as plain text files.
 
@@ -22,6 +22,7 @@ The goal is to simulate the *output* of an expert reviewer – clean, concise, a
 *   💻 Simple and clean Command-Line Interface (CLI).
 *   📦 Installable Python package via `pip`.
 *   ✅ Includes unit tests and code quality checks (`pytest`, `black`, `ruff`, `pre-commit`).
+*   🔬 **Experimental:** Attempts to extract references from the paper for future analysis (`--check-references` flag).
 
 ## ⚙️ Configuration
 
@@ -141,6 +142,23 @@ peersight --help
 peersight --version
 ```
 
+**Reference Handling (Experimental):**
+
+```bash
+# Attempt to extract references (results currently logged)
+peersight --check-references path/to/your/paper.txt
+
+# Combine with other flags
+peersight -v --check-references --json path/to/paper.pdf -o review_with_refs.json**Reference Handling (Experimental):**
+
+```bash
+# Attempt to extract references (results currently logged)
+peersight --check-references path/to/your/paper.txt
+
+# Combine with other flags
+peersight -v --check-references --json path/to/paper.pdf -o review_with_refs.json
+```
+
 ### Output Control:
 
 * Save Text review to a file
@@ -213,6 +231,8 @@ peersight -v path/to/paper.txt
 * **Deep Understanding:** As an AI simulation, it lacks the deep domain expertise and nuanced understanding of a human expert in a specific field.
 
 * **No Feedback Loop:** Does not currently support incorporating reviewer comments back into revisions.
+
+*   **Reference Extraction:** The current reference extraction (`--check-references`) is highly experimental and uses basic heuristics. It will struggle with diverse or poorly formatted reference lists in plain text or PDFs. Accuracy is not guaranteed. Full reference validation and analysis are future work.
 
 ## 🔧 Development
 
