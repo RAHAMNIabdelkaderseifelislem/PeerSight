@@ -113,3 +113,64 @@ class EditorAgent:
 
         logger.info(f"Editor Agent determined specialty: {determined_specialty}")
         return determined_specialty
+
+
+class ReviewerAgent:
+    """
+    Agent responsible for generating the detailed academic peer review.
+    """
+
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        api_url: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_k: Optional[int] = None,
+        top_p: Optional[float] = None,
+    ):
+        self.model = model
+        self.api_url = api_url
+        self.temperature = temperature
+        self.top_k = top_k
+        self.top_p = top_p
+
+    def generate_review(
+        self, paper_content: str, paper_specialty: str
+    ) -> Optional[str]:
+        """
+        Uses an LLM to generate a structured peer review.
+
+        Args:
+            paper_content: The full text content of the paper.
+            paper_specialty: The determined specialty of the paper.
+
+        Returns:
+            A raw string containing the structured review from the LLM, or None on failure.
+        """
+        if not paper_content:
+            logger.error("Cannot generate review without paper content.")
+            return None
+
+        # Use the new strict prompt template
+        # We will modify format_strict_review_prompt later to actually use paper_specialty
+        prompt_text = prompts.format_strict_review_prompt(
+            paper_content, paper_specialty
+        )
+        logger.info(f"Generating review for paper in specialty: {paper_specialty}...")
+        logger.debug(f"Strict review prompt (first 500 chars): {prompt_text[:500]}...")
+
+        raw_response = llm_client.query_ollama(
+            prompt=prompt_text,
+            model=self.model,
+            api_url=self.api_url,
+            temperature=self.temperature,  # Use instance temperature
+            top_k=self.top_k,
+            top_p=self.top_p,
+        )
+
+        if not raw_response:
+            logger.error("Failed to get response from LLM for review generation.")
+            return None
+
+        # Raw response is returned; cleaning is handled by the core logic for now
+        return raw_response

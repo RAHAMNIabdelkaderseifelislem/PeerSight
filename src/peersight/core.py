@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Dict, Optional, Tuple, Union  # For type hints
 
-from . import agent, config, llm_client, parser, prompts, utils
+from . import agent, config, parser, utils
 
 logger = logging.getLogger(__name__)
 
@@ -53,82 +53,65 @@ def generate_review(
             f"Input paper length ({paper_length} chars) exceeds threshold ({config.MAX_PAPER_LENGTH_WARN_THRESHOLD} chars). Processing may be slow or fail."
         )
 
-    # --- TEMP: Extract "Abstract" ---
-    # This is a placeholder. Real abstract extraction is complex.
-    # For now, take the first N characters or up to the first double newline.
+    # 2. Determine Paper Specialty using EditorAgent
     first_double_newline = paper_content.find("\n\n")
-    if (
-        first_double_newline != -1 and first_double_newline < 1500
-    ):  # Arbitrary length for "abstract"
-        paper_abstract_for_specialty = paper_content[:first_double_newline].strip()
-    else:
-        paper_abstract_for_specialty = paper_content[
-            :1000
-        ].strip()  # Fallback to first 1000 chars
+    paper_abstract_for_specialty = (
+        paper_content[:first_double_newline].strip()
+        if first_double_newline != -1 and first_double_newline < 1500
+        else paper_content[:1000].strip()
+    )
     logger.debug(
         f"Using pseudo-abstract for specialty: '{paper_abstract_for_specialty[:100]}...'"
     )
 
-    # --- Instantiate and Use Editor Agent (Placeholder) ---
-    # Use effective LLM params if overridden, else defaults from config used by llm_client
-    # The agent itself doesn't have its own config values yet, it passes them to llm_client
-    editor_llm_temp = 0.3  # Specific low temp for classification
+    editor_llm_temp = 0.3  # Low temp for classification
     editor_agent = agent.EditorAgent(
-        model=model_override,  # Pass along overrides
-        api_url=api_url_override,
-        temperature=editor_llm_temp,  # Use specific temp for this task
+        model=model_override, api_url=api_url_override, temperature=editor_llm_temp
     )
     determined_specialty = editor_agent.determine_paper_specialty(
         paper_abstract_for_specialty
     )
-
-    if determined_specialty:
-        logger.info(f"Editor Agent determined specialty: {determined_specialty}")
-        # We will use this specialty in the next steps for the Reviewer Agent's prompt
-    else:
+    if not determined_specialty:  # If None or empty from agent after cleaning
         logger.warning(
-            "Could not determine paper specialty. Proceeding with generic review."
+            "Could not determine paper specialty via EditorAgent. Defaulting to 'General Academic'."
         )
-        determined_specialty = "General Academic"  # Fallback
+        determined_specialty = "General Academic"
+    logger.info(f"Paper specialty determined as: {determined_specialty}")
 
-    # 2. Generate Review Prompt (This will be modified later to include specialty)
-    # For now, it remains the same
-    review_prompt = prompts.format_review_prompt(paper_content)
-    logger.info("Generated review prompt for LLM (currently generic).")
-    logger.debug(f"Prompt length: {len(review_prompt)} characters.")
-
-    # 3. Query LLM for Review
-    logger.info("Sending request to LLM for paper review...")
-    raw_review_output = llm_client.query_ollama(
-        prompt=review_prompt,
+    # 3. Generate Review using ReviewerAgent
+    logger.info("Instantiating ReviewerAgent...")
+    reviewer_agent = agent.ReviewerAgent(
         model=model_override,
         api_url=api_url_override,
-        temperature=temperature_override,
-        top_k=top_k_override,  # Pass override
-        top_p=top_p_override,  # Pass override
+        temperature=temperature_override,  # Use main temp CLI/config override
+        top_k=top_k_override,
+        top_p=top_p_override,
+    )
+    # Call the ReviewerAgent's generate_review method
+    raw_review_output = reviewer_agent.generate_review(
+        paper_content, determined_specialty
     )
 
-    # 4. Clean LLM Output
+    if not raw_review_output:
+        logger.error("ReviewerAgent failed to generate review output from LLM.")
+        return False, None
+    logger.info("Received raw response from LLM via ReviewerAgent.")
+
+    # 4. Clean LLM Output (remains the same, operates on raw_review_output)
     cleaned_review_text = utils.clean_llm_output(raw_review_output)
     if not cleaned_review_text:
         logger.error("Review text is empty after cleaning process.")
-        return False, None  # Return failure, no data
-    logger.info("Cleaned LLM response successfully.")
+        return False, None
+    logger.info("Cleaned LLM review response successfully.")
 
-    # 5. Parse Cleaned Text
+    # 5. Parse Cleaned Text (remains the same)
     parsed_review = parser.parse_review_text(cleaned_review_text)
-
     if parsed_review is None:
-        # Log clarified
         logger.error(
-            "Failed to parse cleaned review text into structured data. Returning raw cleaned text instead."
+            "Failed to parse cleaned review text. Returning raw cleaned text instead."
         )
-        # Return success=True (review generated/cleaned) but data is the raw text
         return True, cleaned_review_text
     else:
         logger.info("Successfully parsed review into structured data.")
         logger.debug(f"Parsed Review Data:\n{json.dumps(parsed_review, indent=2)}")
-        # Return success=True and the parsed dictionary
         return True, parsed_review
-
-    # Note: Output handling is now done in main.py

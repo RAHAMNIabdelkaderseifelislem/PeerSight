@@ -9,33 +9,6 @@ REVIEW_SECTION_RECOMMENDATION = "## Recommendation"
 REVIEW_RECOMMENDATION_OPTIONS = ["Accept", "Minor Revision", "Major Revision", "Reject"]
 
 # --- Prompt Template ---
-# Use textwrap.dedent to remove common leading whitespace
-PEER_REVIEW_PROMPT_TEMPLATE = textwrap.dedent(
-    """
-    You are an expert academic reviewer simulating the peer review process for a research journal.
-    Your task is to provide a structured, concise, and objective review of the following academic paper text, evaluating it against standard academic criteria.
-
-    **Instructions:**
-    1.  Thoroughly read and analyze the provided paper text.
-    2.  Generate a review consisting ONLY of the following sections, in this exact order:
-        - {summary_section_header}
-        - {strengths_section_header}
-        - {weaknesses_section_header}
-        - {recommendation_section_header}
-    3.  Under '{summary_section_header}', provide a brief (2-4 sentences) overview of the paper's main topic, research question, methodology, and key findings/conclusions.
-    4.  Under '{strengths_section_header}', **list the main strengths using bullet points (`- `)**. Start each bullet point clearly. Consider criteria such as: Originality/Novelty (e.g., "- The approach introduces a novel technique..."), Significance/Impact (e.g., "- The findings have significant implications for..."), Methodological Soundness (e.g., "- The methodology is robust and appropriate..."), Clarity/Presentation (e.g., "- The paper is clearly written and well-organized..."), and Evidence/Support (e.g., "- Claims are well-supported by the data...").
-    5.  Under '{weaknesses_section_header}', **list the main weaknesses or areas for improvement using bullet points (`- `)**. Start each bullet point clearly. Consider criteria such as: Lack of Originality (e.g., "- The work largely replicates existing studies..."), Limited Significance (e.g., "- The contribution appears incremental..."), Methodological Flaws (e.g., "- The sample size is too small..."), Lack of Clarity (e.g., "- Key terms are not clearly defined..."), Insufficient Evidence/Support (e.g., "- Conclusions are not fully supported by the results..."), or Ethical Concerns.
-    6.  Under '{recommendation_section_header}', state ONE recommendation from the following options: {recommendation_options_str}. Provide NO additional justification or explanation in this section, only the single recommendation word/phrase.
-    7.  **CRITICAL:** Your entire output MUST start directly with '{summary_section_header}' and end immediately after the recommendation word/phrase. Do NOT include any preamble, conversation, apologies, self-correction, or any text beyond the structured review defined above (including no comments about your own reasoning process). Ensure each section header appears exactly as specified on its own line.
-
-    **Paper Text to Review:**
-    --- START PAPER ---
-    {paper_content}
-    --- END PAPER ---
-
-    Review Output:
-    """
-)  # Dedent automatically handles the closing """
 
 # --- New Prompt for Specialty Determination ---
 SPECIALTY_DETERMINATION_PROMPT_TEMPLATE = textwrap.dedent(
@@ -71,13 +44,64 @@ def format_specialty_determination_prompt(
     )
 
 
-def format_review_prompt(paper_content: str) -> str:
+STRICT_PEER_REVIEW_PROMPT_TEMPLATE = textwrap.dedent(
     """
-    Formats the peer review prompt template with the paper content
-    and standard section headers.
-    """
-    # The template string is already dedented when defined
-    return PEER_REVIEW_PROMPT_TEMPLATE.format(
+You are an expert academic journal reviewer tasked with providing a rigorous, structured, and impartial peer review.
+The paper is in the field of: **{paper_specialty}**. While you should provide a general academic review, keep this specialty in mind if specific domain knowledge is relevant to assess claims or methodology (though your primary focus is general academic rigor unless specific instructions for the specialty are given later).
+
+**CRITICAL INSTRUCTIONS FOR OUTPUT FORMATTING:**
+1.  Your ENTIRE response MUST begin *exactly* with "## Summary" and end *exactly* after the single-word/phrase recommendation.
+2.  Do NOT include ANY preamble, apologies, self-correction, conversational text, or any text outside the defined section structure.
+3.  Each section header (e.g., "## Summary") MUST be on its own line, followed by its content.
+4.  Use Markdown for bullet points (`- `) within Strengths and Weaknesses.
+
+**REVIEW STRUCTURE & GUIDELINES:**
+
+{summary_section_header}
+Provide a concise (3-5 sentences) summary covering:
+- The paper's primary research question or objective(s).
+- The core methodology employed.
+- The most significant findings and conclusions.
+- The purported contribution to the field of {paper_specialty}.
+
+{strengths_section_header}
+Identify and articulate the paper's most significant strengths using bullet points. For each strength, briefly explain *why* it is a strength. Consider:
+- **Originality & Novelty:** (e.g., "- The work presents a novel approach to [problem] by [method/idea], which has not been explored previously.")
+- **Significance & Impact:** (e.g., "- The findings offer substantial insights into [area], potentially influencing future research in {paper_specialty}.")
+- **Methodological Rigor:** (e.g., "- The research design is sound and appropriate for addressing the research question; data collection and analysis methods are robust and well-executed.")
+- **Clarity & Presentation:** (e.g., "- The paper is exceptionally well-written and logically structured, making complex ideas accessible.")
+- **Evidence & Argumentation:** (e.g., "- Claims are consistently well-supported by strong empirical evidence and logical reasoning.")
+
+{weaknesses_section_header}
+Identify and articulate the paper's most critical weaknesses or areas requiring improvement using bullet points. For each weakness, explain *why* it is a concern and, if possible, suggest specific ways it could be addressed. Consider:
+- **Originality & Novelty:** (e.g., "- The contribution appears incremental, building only marginally on existing work in {paper_specialty} without offering significant new perspectives.")
+- **Significance & Impact:** (e.g., "- The practical or theoretical implications of the findings are unclear or not sufficiently demonstrated.")
+- **Methodological Flaws:** (e.g., "- The study suffers from [specific flaw, e.g., small sample size, lack of control group, inappropriate statistical tests], which limits the validity of the conclusions.")
+- **Clarity & Presentation:** (e.g., "- Certain sections are ambiguously worded or poorly organized, hindering reader comprehension (e.g., specify section/concept).")
+- **Evidence & Argumentation:** (e.g., "- Conclusions are not adequately supported by the presented data/evidence, or alternative interpretations are not sufficiently addressed.")
+- **Literature Review:** (e.g., "- The literature review overlooks key relevant studies in {paper_specialty} or fails to adequately contextualize the research.")
+- **Ethical Concerns (if applicable):** (e.g., "- [Describe any ethical concerns regarding methodology, data, etc.]")
+
+{recommendation_section_header}
+State ONE of the following recommendations: {recommendation_options_str}.
+(Provide NO other text in this section).
+
+**Paper Text to Review:**
+--- START PAPER ---
+{paper_content}
+--- END PAPER ---
+
+Review Output:
+"""
+)
+
+
+def format_strict_review_prompt(paper_content: str, paper_specialty: str) -> str:
+    """Formats the strict peer review prompt template."""
+    return STRICT_PEER_REVIEW_PROMPT_TEMPLATE.format(
+        paper_specialty=(
+            paper_specialty if paper_specialty else "General Academic"
+        ),  # Ensure specialty is never None
         summary_section_header=REVIEW_SECTION_SUMMARY,
         strengths_section_header=REVIEW_SECTION_STRENGTHS,
         weaknesses_section_header=REVIEW_SECTION_WEAKNESSES,
