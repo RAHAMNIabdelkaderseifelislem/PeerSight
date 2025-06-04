@@ -1,6 +1,8 @@
 import logging
 import os
 import re
+import urllib.parse  # For URL encoding
+import webbrowser  # Import webbrowser
 from pathlib import Path
 from typing import Optional  # Import Optional
 
@@ -291,3 +293,53 @@ def _clean_with_regex_fallback(raw_output: str) -> str:
         )
 
     return cleaned_output
+
+
+def open_search_for_paper(title: str, search_engine: str = "google_scholar") -> bool:
+    """
+    Opens a web browser to search for a paper title on a specified search engine.
+
+    Args:
+        title: The title of the paper to search for.
+        search_engine: The search engine to use. Currently supports:
+                       'google_scholar', 'pubmed', 'semantic_scholar', 'google'.
+
+    Returns:
+        True if the browser was successfully opened, False otherwise.
+    """
+    if not title:
+        logger.warning("Cannot open search: No title provided.")
+        return False
+
+    query = urllib.parse.quote_plus(title)  # URL-encode the title
+
+    base_urls = {
+        "google_scholar": "https://scholar.google.com/scholar?q=",
+        "pubmed": "https://pubmed.ncbi.nlm.nih.gov/?term=",
+        "semantic_scholar": "https://www.semanticscholar.org/search?q=",
+        "google": "https://www.google.com/search?q=",
+        "arxiv": "https://arxiv.org/search/?query=",  # Added arXiv
+    }
+
+    if search_engine.lower() not in base_urls:
+        logger.error(
+            f"Unsupported search engine: {search_engine}. Supported: {list(base_urls.keys())}"
+        )
+        return False
+
+    url = base_urls[search_engine.lower()] + query
+    logger.info(f"Opening browser to search for '{title}' on {search_engine}: {url}")
+
+    try:
+        success = webbrowser.open_new_tab(url)
+        if not success:
+            logger.warning(
+                f"webbrowser.open_new_tab may have failed for URL: {url}. Trying webbrowser.open."
+            )
+            success = webbrowser.open(url)  # Try fallback
+        if not success:
+            logger.error(f"Failed to open web browser for search. URL: {url}")
+        return success
+    except Exception as e:
+        logger.error(f"Error opening web browser for search: {e}", exc_info=True)
+        return False

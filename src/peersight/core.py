@@ -16,6 +16,8 @@ def generate_review(
     temperature_override: Optional[float] = None,
     top_k_override: Optional[int] = None,  # Add top_k
     top_p_override: Optional[float] = None,  # Add top_p
+    perform_web_search: bool = False,  # New flag, default to False
+    search_engine: str = "google_scholar",  # Default search engine
 ) -> Tuple[bool, Optional[Union[Dict, str]]]:
     """
     Orchestrates the academic paper review generation process.
@@ -52,6 +54,26 @@ def generate_review(
         logger.warning(
             f"Input paper length ({paper_length} chars) exceeds threshold ({config.MAX_PAPER_LENGTH_WARN_THRESHOLD} chars). Processing may be slow or fail."
         )
+
+    if perform_web_search:
+        # Naive title extraction: first non-empty line (up to N chars)
+        lines = paper_content.splitlines()
+        potential_title = ""
+        for line in lines:
+            if line.strip():
+                potential_title = line.strip()[:150]  # Limit title length for query
+                break
+
+        if potential_title:
+            logger.info(
+                f"Attempting web search for potential title: '{potential_title}' on {search_engine}"
+            )
+            utils.open_search_for_paper(potential_title, search_engine=search_engine)
+            # Note: This opens the browser and continues. It doesn't wait or parse results yet.
+        else:
+            logger.warning(
+                "Could not determine a title for web search from paper content."
+            )
 
     # 2. Determine Paper Specialty using EditorAgent
     first_double_newline = paper_content.find("\n\n")

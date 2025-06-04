@@ -75,6 +75,19 @@ def setup_arg_parser():
         default=None,
         help="Set LLM top-p nucleus sampling (e.g., 0.9; default: Ollama internal)",
     )
+    # --- Add Web Search Flags ---
+    search_engines = ["google_scholar", "pubmed", "semantic_scholar", "arxiv", "google"]
+    parser.add_argument(
+        "--search",
+        action="store_true",
+        help="Perform a web search for the paper title (opens browser).",
+    )
+    parser.add_argument(
+        "--search-engine",
+        choices=search_engines,
+        default="google_scholar",
+        help=f"Search engine to use with --search (default: google_scholar). Choices: {', '.join(search_engines)}",
+    )
     parser.add_argument(
         "-v",
         "--verbose",
@@ -240,6 +253,8 @@ def run():
             temperature_override=args.temperature,
             top_k_override=args.top_k,
             top_p_override=args.top_p,
+            perform_web_search=args.search,  # Pass search flag
+            search_engine=args.search_engine,  # Pass search engine
         )
 
         print("-" * 30, file=sys.stderr)
