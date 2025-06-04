@@ -158,3 +158,122 @@ def parse_review_text(review_text: str) -> Optional[Dict[str, str]]:
 
     logger.info("Successfully parsed review text into structured dictionary.")
     return parsed_data
+
+
+def find_reference_section(paper_content: str) -> Optional[str]:
+    """
+    Attempts to find the 'References' or 'Bibliography' section of a paper.
+    Returns the text of that section, or None if not found.
+    """
+    # Common headers for reference sections (case-insensitive)
+    reference_headers = [
+        "References",
+        "Bibliography",
+        "Literature Cited",
+        "Works Cited",
+    ]
+    # Regex to find these headers at the start of a line, possibly with '##'
+    pattern_str = r"^(?:\#\#\s*)?(" + "|".join(reference_headers) + r")\s*$"
+    header_pattern = re.compile(pattern_str, re.IGNORECASE | re.MULTILINE)
+
+    match = header_pattern.search(paper_content)
+    if not match:
+        logger.warning("Could not find a standard reference section header.")
+        return None
+
+    # Get text after the found header
+    reference_section_text = paper_content[match.end() :]
+    logger.info(f"Found potential reference section starting with: '{match.group(1)}'")
+
+    # Optional: Try to find the end of the reference section (e.g., start of Appendix, or just take N chars)
+    # This is complex; for now, we might take a large chunk or until another major H2 header.
+    # For simplicity in this step, let's assume the rest of the doc after "References" is mostly references.
+    # A more robust method would be needed for real-world scenarios.
+    return reference_section_text.strip()
+
+
+def extract_references_from_text(reference_section_text: str) -> List[str]:
+    """
+    Extracts individual reference strings from the text of a reference section.
+    This uses heuristics and may not be perfect.
+
+    Args:
+        reference_section_text: The string content of the reference section.
+
+    Returns:
+        A list of strings, where each string is a potential reference.
+    """
+    if not reference_section_text:
+        return []
+
+    references = []
+    # Heuristic 1: Split by common numbering patterns like "[1]", "1.", "1)" at the start of a line
+    # This pattern looks for optional [, then digits, then optional ], then . or ), then whitespace.
+    # It tries to capture the text *after* this pattern up to the next such pattern or end of string.
+    # Using a positive lookahead `(?=...)` to split *before* the next number.
+    numbered_refs = re.split(
+        r"^\s*(?:\[\d+\]|\d+\.|\d+\))\s+", reference_section_text, flags=re.MULTILINE
+    )
+
+    if len(numbered_refs) > 1:  # Indicates numbered list format was likely found
+        logger.debug(f"Found {len(numbered_refs)-1} potential numbered references.")
+        for ref_text in numbered_refs[1:]:  # Skip the part before the first number
+            if ref_text.strip():
+                references.append(ref_text.strip())
+    else:
+        # Heuristic 2: If no numbering, assume each non-empty line in the section is a reference.
+        # This is very broad and works best if the reference section is clean.
+        # Or, split by double newlines if references are paragraph-separated.
+        potential_refs = (
+            reference_section_text.splitlines()
+        )  # Split by single newline first
+        current_ref = ""
+        for line in potential_refs:
+            line_stripped = line.strip()
+            if not line_stripped:  # Empty line might separate references
+                if current_ref:
+                    references.append(current_ref)
+                    current_ref = ""
+            else:
+                # Heuristic for new reference: starts with likely author initial or year
+                # e.g. "Smith, J.", "Adams B", "(2020)", "2020."
+                # Or simply if the line is not clearly a continuation of the previous.
+                # This is very tricky. For now, let's be simple:
+                # If a line looks like it starts a new reference (e.g., not indented, or follows specific patterns)
+                # For simplicity, let's assume for now that non-numbered lists are one per line or separated by blank lines.
+                if current_ref and (
+                    not line.startswith(" ") and not line.startswith("\t")
+                ):  # Basic new line start
+                    if current_ref:
+                        references.append(current_ref)
+                    current_ref = line_stripped
+                else:
+                    current_ref = (current_ref + " " + line_stripped).strip()
+
+        if current_ref:  # Add the last accumulated reference
+            references.append(current_ref)
+
+        if not references:  # Fallback, treat each non-empty line as a ref
+            logger.debug(
+                "No clear numbered or block references, treating each non-empty line as a reference."
+            )
+            references = [
+                line.strip()
+                for line in reference_section_text.splitlines()
+                if line.strip()
+            ]
+
+    # Basic cleaning of extracted references
+    cleaned_references = []
+    for ref in references:
+        # Remove any "Retrieved from..." or "Available at..." common phrases if they are very long
+        ref = re.sub(r"\s*\[Accessed:.*\]", "", ref, flags=re.IGNORECASE)
+        ref = re.sub(r"\s*Retrieved from http.*", "", ref, flags=re.IGNORECASE)
+        ref = re.sub(r"\s*Available at: http.*", "", ref, flags=re.IGNORECASE)
+        ref = ref.strip()
+        if len(ref) > 15:  # Arbitrary minimum length for a plausible reference
+            cleaned_references.append(ref)
+
+    logger.info(f"Extracted {len(cleaned_references)} potential reference strings.")
+    logger.debug(f"First few extracted references (if any): {cleaned_references[:3]}")
+    return cleaned_references

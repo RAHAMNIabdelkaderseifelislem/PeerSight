@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Optional, Tuple, Union  # For type hints
+from typing import Dict, List, Optional, Tuple, Union  # For type hints
 
 from . import agent, config, parser, utils
 
@@ -18,6 +18,7 @@ def generate_review(
     top_p_override: Optional[float] = None,  # Add top_p
     perform_web_search: bool = False,  # New flag, default to False
     search_engine: str = "google_scholar",  # Default search engine
+    check_references: bool = False,  # New flag
 ) -> Tuple[bool, Optional[Union[Dict, str]]]:
     """
     Orchestrates the academic paper review generation process.
@@ -54,6 +55,28 @@ def generate_review(
         logger.warning(
             f"Input paper length ({paper_length} chars) exceeds threshold ({config.MAX_PAPER_LENGTH_WARN_THRESHOLD} chars). Processing may be slow or fail."
         )
+
+    extracted_references: List[str] = []
+    if check_references:
+        logger.info("Attempting to extract references from the paper...")
+        reference_section_text = parser.find_reference_section(paper_content)
+        if reference_section_text:
+            extracted_references = parser.extract_references_from_text(
+                reference_section_text
+            )
+            if not extracted_references:
+                logger.warning(
+                    "Found a reference section, but could not extract individual references."
+                )
+        else:
+            logger.warning(
+                "Could not find a reference section to extract references from."
+            )
+        # For now, we just log them. In the next commit, we'll search them.
+        if extracted_references:
+            logger.info(
+                f"Extracted {len(extracted_references)} references. First few: {extracted_references[:3]}"
+            )
 
     if perform_web_search:
         # Naive title extraction: first non-empty line (up to N chars)

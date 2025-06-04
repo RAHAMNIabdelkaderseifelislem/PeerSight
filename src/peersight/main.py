@@ -89,6 +89,11 @@ def setup_arg_parser():
         help=f"Search engine to use with --search (default: google_scholar). Choices: {', '.join(search_engines)}",
     )
     parser.add_argument(
+        "--check-references",
+        action="store_true",
+        help="Attempt to extract references and (in future) check their existence. (Experimental)",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -255,6 +260,7 @@ def run():
             top_p_override=args.top_p,
             perform_web_search=args.search,  # Pass search flag
             search_engine=args.search_engine,  # Pass search engine
+            check_references=args.check_references,  # Pass check references flag
         )
 
         print("-" * 30, file=sys.stderr)
