@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "peersight"
-version = "0.1.0" # Sync this with src/peersight/__init__.py (manual for now)
+version = "0.1.1" # Sync this with src/peersight/__init__.py (manual for now)
 authors = [
     { name="AbdElKader Seif El Islem RAHMANI", email="a.e.k426rahmani@gmail.com" },
 ]
